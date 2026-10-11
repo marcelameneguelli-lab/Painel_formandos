@@ -1,0 +1,3416 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel Formandos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+<style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style>
+<!-- v5: armazenamento em Google Apps Script + Planilha, sincronização entre atendentes -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:        #F5F3EF;
+  --surface:   #FFFFFF;
+  --surface-2: #F0EEE9;
+  --border:    #DDD9D0;
+  --text:      #1B1917;
+  --muted:     #716B62;
+  --faint:     #A49C92;
+  --navy:      #1C3B6E;
+  --navy-2:    #14295A;
+
+  --p1: #B45309; --p1-bg: #FFFBEB; --p1-border: #FDE68A;
+  --p2: #15803D; --p2-bg: #F0FDF4; --p2-border: #86EFAC;
+  --danger-c: #B91C1C; --danger-bg: #FEF2F2; --danger-border: #FECACA;
+
+  --s-pend-bg:#FEE2E2; --s-pend-c:#991B1B;
+  --s-entr-bg:#FEF3C7; --s-entr-c:#92400E;
+  --s-reg-bg: #D1FAE5; --s-reg-c: #065F46;
+  --s-disp-bg:#DBEAFE; --s-disp-c:#1E40AF;
+  --s-anal-bg:#F3F4F6; --s-anal-c:#374151;
+  --s-apto-bg:#D1FAE5; --s-apto-c:#065F46;
+  --s-naoa-bg:#FEE2E2; --s-naoa-c:#991B1B;
+
+  --ok:#059669;
+
+  /* bib */
+  --s-bib-sol-bg:#EDE9FE; --s-bib-sol-c:#5B21B6;
+  --s-bib-ok-bg:#D1FAE5;  --s-bib-ok-c:#065F46;
+
+  /* formados cer */
+  --s-conf-bg:#D1FAE5; --s-conf-c:#065F46;
+  --s-naop-bg:#FEE2E2; --s-naop-c:#991B1B;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#111315; --surface:#1A1D20; --surface-2:#222528; --border:#2C3038;
+    --text:#E6E1DA; --muted:#8C8478; --faint:#56524C;
+    --navy:#5090D0; --navy-2:#1C3B6E;
+    --p1:#D97706; --p1-bg:#1C1400; --p1-border:#6B3D00;
+    --p2:#16A34A;  --p2-bg:#051209; --p2-border:#145228;
+    --danger-c:#EF4444; --danger-bg:#1A0606; --danger-border:#5C1212;
+    --s-pend-bg:#3B0C0C; --s-pend-c:#FCA5A5;
+    --s-entr-bg:#3B2A06; --s-entr-c:#FCD34D;
+    --s-reg-bg:#052E16;  --s-reg-c:#6EE7B7;
+    --s-disp-bg:#1E3A8A; --s-disp-c:#BFDBFE;
+    --s-anal-bg:#1F2937; --s-anal-c:#9CA3AF;
+    --s-apto-bg:#052E16; --s-apto-c:#6EE7B7;
+    --s-naoa-bg:#3B0C0C; --s-naoa-c:#FCA5A5;
+    --s-bib-sol-bg:#2E1065; --s-bib-sol-c:#C4B5FD;
+    --s-bib-ok-bg:#052E16; --s-bib-ok-c:#6EE7B7;
+    --s-conf-bg:#052E16; --s-conf-c:#6EE7B7;
+    --s-naop-bg:#3B0C0C; --s-naop-c:#FCA5A5;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#111315; --surface:#1A1D20; --surface-2:#222528; --border:#2C3038;
+  --text:#E6E1DA; --muted:#8C8478; --faint:#56524C;
+  --navy:#5090D0; --navy-2:#1C3B6E;
+  --p1:#D97706; --p1-bg:#1C1400; --p1-border:#6B3D00;
+  --p2:#16A34A;  --p2-bg:#051209; --p2-border:#145228;
+  --danger-c:#EF4444; --danger-bg:#1A0606; --danger-border:#5C1212;
+  --s-pend-bg:#3B0C0C; --s-pend-c:#FCA5A5;
+  --s-entr-bg:#3B2A06; --s-entr-c:#FCD34D;
+  --s-reg-bg:#052E16;  --s-reg-c:#6EE7B7;
+  --s-disp-bg:#1E3A8A; --s-disp-c:#BFDBFE;
+  --s-anal-bg:#1F2937; --s-anal-c:#9CA3AF;
+  --s-apto-bg:#052E16; --s-apto-c:#6EE7B7;
+  --s-naoa-bg:#3B0C0C; --s-naoa-c:#FCA5A5;
+  --s-bib-sol-bg:#2E1065; --s-bib-sol-c:#C4B5FD;
+  --s-bib-ok-bg:#052E16; --s-bib-ok-c:#6EE7B7;
+  --s-conf-bg:#052E16; --s-conf-c:#6EE7B7;
+  --s-naop-bg:#3B0C0C; --s-naop-c:#FCA5A5;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;}
+
+/* ── HEADER ── */
+.app-header{
+  background:var(--navy-2);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:12px 20px;flex-wrap:wrap;
+}
+.app-title{font-size:15px;font-weight:600;color:#fff;}
+.app-title .sem{font-weight:400;opacity:0.65;font-size:13px;margin-left:4px;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+/* sync */
+.sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
+.sync-label{font-size:11px;display:flex;align-items:center;gap:4px;color:rgba(255,255,255,0.7);}
+.sync-live   .sync-dot{background:#34D399;}
+.sync-local  .sync-dot{background:#FCD34D;}
+.sync-saving .sync-dot{background:#60A5FA;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── TABS ── */
+.tab-nav{
+  display:flex;gap:0;
+  background:var(--navy-2);
+  border-bottom:3px solid rgba(0,0,0,.2);
+}
+.tab-btn{
+  padding:10px 20px;
+  font-family:inherit;font-size:13px;font-weight:500;
+  color:rgba(255,255,255,.55);
+  background:transparent;border:none;cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-3px;
+  transition:color .12s, border-color .12s;
+  white-space:nowrap;
+}
+.tab-btn:hover{color:rgba(255,255,255,.85);}
+.tab-btn.active{color:#fff;border-bottom-color:#fff;}
+
+/* tab panels */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .12s;white-space:nowrap;}
+.btn-primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+.btn-primary:hover{opacity:.85;}
+.btn-ghost{background:transparent;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,.25);}
+.btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,.5);}
+.btn-ghost-dark{background:transparent;color:var(--muted);border-color:var(--border);}
+.btn-ghost-dark:hover{color:var(--text);border-color:var(--muted);}
+.btn-danger{background:var(--danger-c);color:#fff;border-color:var(--danger-c);}
+.btn-danger:hover{opacity:.85;}
+.btn-danger-ghost{background:transparent;color:rgba(255,255,255,0.55);border-color:rgba(255,255,255,.15);}
+.btn-danger-ghost:hover{color:#FCA5A5;border-color:#FCA5A5;}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  display:flex;gap:0;background:var(--navy);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  flex-wrap:wrap;
+}
+.stat-tile{
+  flex:1;min-width:110px;
+  padding:12px 16px;
+  border-right:1px solid rgba(255,255,255,.08);
+  color:#fff;
+}
+.stat-tile:last-child{border-right:none;}
+.stat-num{font-size:22px;font-weight:600;letter-spacing:-0.02em;display:block;font-variant-numeric:tabular-nums;}
+.stat-label{font-size:10px;opacity:.55;text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:1px;}
+.stat-tile.danger .stat-num{color:#FCA5A5;}
+.stat-tile.ok     .stat-num{color:#6EE7B7;}
+.stat-tile.warn   .stat-num{color:#FCD34D;}
+
+/* ── FILTERS ── */
+.filters-bar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);
+}
+.filter-search{
+  flex:1;min-width:180px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;font-family:inherit;font-size:13px;color:var(--text);outline:none;
+}
+.filter-search:focus{border-color:var(--navy);}
+.filter-select{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;font-family:inherit;font-size:12px;color:var(--text);
+  cursor:pointer;outline:none;
+}
+.filter-select:focus{border-color:var(--navy);}
+.filter-count{font-size:12px;color:var(--faint);margin-left:auto;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;min-height:200px;}
+.student-table{width:100%;border-collapse:collapse;}
+.student-table thead th{
+  background:var(--surface);
+  padding:8px 10px;
+  text-align:left;
+  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);
+  border-bottom:2px solid var(--border);
+  white-space:nowrap;
+  position:sticky;top:0;z-index:1;
+}
+.student-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+.student-table tbody tr:hover{background:var(--surface-2);}
+.student-table td{padding:5px 10px;vertical-align:middle;}
+
+.td-nome{font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.td-mat{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.td-curso{font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.td-fantasia{font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);}
+.td-turno{font-size:12px;white-space:nowrap;color:var(--muted);}
+.td-ingresso{font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);}
+.td-obs{min-width:220px;max-width:320px;}
+.last-reg{display:block;width:100%;text-align:left;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:4px 7px;margin-bottom:3px;font:inherit;font-size:12px;line-height:1.35;color:var(--text);cursor:pointer;}
+.last-reg:hover{border-color:var(--navy);}
+.last-reg b{font-weight:600;color:var(--muted);}
+.last-reg span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.local-banner{background:var(--p1-bg);color:var(--text);border-bottom:1px solid var(--p1-border);padding:10px 20px;font-size:13px;line-height:1.5;}
+
+/* status selects */
+.st-select{
+  appearance:none;-webkit-appearance:none;
+  border:none;border-radius:5px;
+  padding:3px 20px 3px 8px;
+  font-family:inherit;font-size:11px;font-weight:600;
+  cursor:pointer;width:100%;min-width:110px;outline:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3E%3Cpath stroke='currentColor' stroke-width='1.8' stroke-linecap='round' d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 3px center;
+  background-size:11px;
+  transition:opacity .1s;
+}
+.st-select:hover{opacity:.85;}
+.st-select:focus{outline:2px solid var(--navy);outline-offset:1px;}
+
+/* obs cell */
+.obs-span{display:block;font-size:12px;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px;min-height:20px;border:1px solid transparent;transition:border-color .1s;}
+.obs-span:hover{border-color:var(--border);}
+.obs-empty{color:var(--faint);}
+.obs-input{width:100%;font-family:inherit;font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--navy);border-radius:4px;padding:2px 6px;outline:none;}
+
+/* empty state */
+.empty-state{padding:48px 20px;text-align:center;color:var(--muted);}
+.empty-state p{margin-bottom:6px;}
+.empty-state strong{color:var(--text);}
+
+/* ── MODALS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
+.modal-overlay[hidden]{display:none;}
+.modal-box{background:var(--surface);border-radius:12px;width:100%;max-width:620px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-box-sm{max-width:400px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-header h2{font-size:16px;font-weight:600;}
+.modal-close{background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:0 4px;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px;overflow-y:auto;flex:1;}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-shrink:0;}
+.modal-desc{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+
+.csv-textarea{width:100%;height:160px;resize:vertical;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);font-family:monospace;font-size:12px;color:var(--text);padding:10px;outline:none;}
+.csv-textarea:focus{border-color:var(--navy);}
+
+.col-map{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:16px;}
+.col-map-row{display:flex;flex-direction:column;gap:4px;}
+.col-map-row label{font-size:12px;font-weight:500;color:var(--text);}
+.col-map-row select{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:12px;color:var(--text);outline:none;}
+.col-map-row select:focus{border-color:var(--navy);}
+.col-map-required label::after{content:" *";color:var(--danger-c);}
+
+.preview-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;}
+.preview-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;}
+.preview-table{width:100%;border-collapse:collapse;font-size:12px;}
+.preview-table th{background:var(--surface-2);padding:6px 10px;text-align:left;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;}
+.preview-table td{padding:5px 10px;border-bottom:1px solid var(--border);color:var(--text);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.preview-table tr:last-child td{border-bottom:none;}
+
+.import-warning{margin-top:10px;padding:10px 12px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;font-size:12px;color:#92400E;}
+.modal-note{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.5;}
+
+.progress-bar{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-bottom:10px;}
+.progress-fill{height:100%;background:var(--navy);border-radius:3px;transition:width .2s;}
+.progress-label{font-size:13px;color:var(--muted);text-align:center;}
+
+.import-success{text-align:center;padding:20px 0;}
+.success-icon{font-size:40px;margin-bottom:12px;color:var(--ok);}
+.success-msg{font-size:14px;color:var(--text);margin-bottom:20px;}
+
+.modal-box-sm .modal-body p{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* ── FILE DROP ── */
+.file-drop{border:2px dashed var(--border);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .15s, background .15s;background:var(--surface-2);margin-bottom:12px;}
+.file-drop:hover,.file-drop.drag-over{border-color:var(--navy);background:rgba(28,59,110,.05);}
+.file-drop-icon{font-size:28px;margin-bottom:8px;line-height:1;}
+.file-drop-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.file-drop-sub{font-size:11px;color:var(--faint);}
+.file-drop-name{margin-top:6px;font-size:12px;color:var(--navy);font-weight:500;}
+.file-or{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;color:var(--faint);}
+.file-or::before,.file-or::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1F2937;color:#fff;font-size:13px;font-weight:500;padding:10px 20px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:200;}
+#toast.show{opacity:1;}
+
+/* ── SEMESTER BADGE ── */
+.sem-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.85);border-radius:20px;padding:2px 10px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:background .12s;white-space:nowrap;}
+.sem-badge:hover{background:rgba(255,255,255,.22);}
+
+/* ── USER PILL ── */
+.user-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 6px;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);cursor:pointer;font-size:12px;color:rgba(255,255,255,.85);transition:background .12s;}
+.user-pill:hover{background:rgba(255,255,255,.18);}
+.user-avatar{width:22px;height:22px;border-radius:50%;background:var(--navy);border:1.5px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+
+/* ── NAME MODAL ── */
+.name-modal-inner{text-align:center;padding:8px 0 4px;}
+.name-modal-icon{font-size:36px;margin-bottom:12px;}
+.name-modal-inner h3{font-size:17px;font-weight:600;margin-bottom:8px;}
+.name-modal-inner p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
+.name-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:15px;color:var(--text);background:var(--surface-2);outline:none;text-align:center;}
+.name-input:focus{border-color:var(--navy);}
+
+/* ── ACTIVITY TAB ── */
+.activity-wrap{max-width:700px;margin:0 auto;padding:24px 24px 80px;}
+.act-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
+.act-header h2{font-size:16px;font-weight:600;}
+.act-stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.act-stat{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+.act-stat-num{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;}
+.act-stat-label{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.act-feed{display:flex;flex-direction:column;gap:0;}
+.act-day-sep{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:16px 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.act-entry{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.act-entry:last-child{border-bottom:none;}
+.act-avatar{width:30px;height:30px;border-radius:50%;background:var(--navy-2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px;}
+.act-body{flex:1;font-size:13px;line-height:1.5;color:var(--text);}
+.act-who{font-weight:600;}
+.act-student{color:var(--navy);}
+.act-field-tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin:0 2px;background:var(--surface-2);color:var(--muted);border:1px solid var(--border);}
+.act-val{font-weight:500;}
+.act-time{font-size:11px;color:var(--faint);white-space:nowrap;margin-top:3px;flex-shrink:0;}
+.act-empty{padding:48px 20px;text-align:center;color:var(--muted);}
+
+/* ── RÉGUA TAB ── */
+.regua-wrap{max-width:820px;margin:0 auto;padding:24px 24px 80px;}
+
+.regua-phase{margin-top:36px;}
+.regua-phase:first-child{margin-top:24px;}
+
+.phase-eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.c-p1{color:var(--p1);}
+.c-p2{color:var(--p2);}
+.phase-name{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(18px,3vw,26px);font-weight:600;line-height:1.2;margin-bottom:4px;}
+.phase-desc{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.phase-rule{height:2px;border:none;border-radius:1px;margin-bottom:18px;}
+.rule-p1{background:var(--p1);}
+.rule-p2{background:var(--p2);}
+
+.inline-note{margin:4px 0 16px;padding:10px 14px;border-left:3px solid var(--p2-border);background:var(--p2-bg);border-radius:0 6px 6px 0;font-size:13px;color:var(--muted);line-height:1.5;}
+.inline-note strong{color:var(--text);}
+
+.msg-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+.card-top{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;padding:12px 14px 10px;border-bottom:1px solid var(--border);}
+.msg-num{font-size:11px;font-weight:600;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:3px;}
+.title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.msg-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.3;}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;border:1px solid transparent;}
+.badge-p1{background:var(--p1-bg);color:var(--p1);border-color:var(--p1-border);}
+.badge-p2{background:var(--p2-bg);color:var(--p2);border-color:var(--p2-border);}
+.badge-critical{background:var(--danger-bg);color:var(--danger-c);border-color:var(--danger-border);}
+.tag-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.tag{font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;}
+.tag-timing{background:var(--surface-2);color:var(--muted);border:1px solid var(--border);}
+.tag-audience{color:var(--faint);}
+
+.card-body{padding:12px 14px 4px;}
+.bubble-label{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;}
+.bubble{background:var(--surface-2);border:1px solid var(--border);border-radius:4px 10px 10px 10px;padding:12px 14px;font-size:13px;line-height:1.65;color:var(--text);word-break:break-word;}
+
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 14px 12px;}
+.objective-txt{font-size:12px;color:var(--faint);line-height:1.4;}
+.copy-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:transparent;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:border-color .12s,color .12s,background .12s;white-space:nowrap;flex-shrink:0;}
+.copy-btn:hover{border-color:var(--navy);color:var(--navy);}
+.copy-btn.copied{border-color:var(--ok);color:var(--ok);background:var(--p2-bg);}
+.copy-btn svg{width:11px;height:11px;flex-shrink:0;}
+
+.regua-dl-bar{
+  display:flex;gap:10px;flex-wrap:wrap;
+  margin-bottom:24px;padding:16px;
+  background:var(--navy-2);border-radius:10px;
+}
+.dl-pill{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:7px;padding:8px 14px;}
+.dl-pill-date{display:block;font-size:14px;font-weight:600;color:#FCA5A5;font-variant-numeric:tabular-nums;}
+.dl-pill-desc{display:block;font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;}
+
+.how-to{margin-bottom:20px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted);display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
+
+@media(max-width:640px){
+  .stats-bar{flex-direction:column;}
+  .stat-tile{border-right:none;border-bottom:1px solid rgba(255,255,255,.08);}
+  .header-right .btn-danger-ghost{display:none;}
+  .col-map{grid-template-columns:1fr;}
+  .title-row{flex-direction:column;align-items:flex-start;}
+  .card-foot{flex-direction:column;align-items:flex-start;}
+  .regua-wrap{padding:16px 16px 60px;}
+}
+
+/* ── v4: FICHA DO ALUNO, HISTÓRICO E GUIA ── */
+.name-btn{background:none;border:none;padding:0;font:inherit;font-weight:500;color:var(--text);cursor:pointer;text-align:left;max-width:220px;display:flex;align-items:center;gap:7px;}
+.name-btn .nb-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.name-btn:hover .nb-txt,.name-btn:focus-visible .nb-txt{color:var(--navy);text-decoration:underline;}
+.name-btn:focus-visible{outline:2px solid var(--navy);outline-offset:2px;border-radius:3px;}
+.lvl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--faint);}
+.lvl-danger{background:var(--danger-c);} .lvl-warn{background:var(--p1);} .lvl-ok{background:var(--ok);} .lvl-info{background:var(--faint);}
+.td-next{font-size:12px;max-width:260px;min-width:180px;color:var(--muted);line-height:1.35;}
+.td-next span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.td-resp{font-size:12px;white-space:nowrap;color:var(--muted);}
+.td-contact{font-size:12px;white-space:nowrap;color:var(--muted);}
+.td-contact.late{color:var(--danger-c);font-weight:600;}
+.td-contact.never{color:var(--p1);}
+.link-btn{background:none;border:none;padding:0;font:inherit;color:var(--navy);cursor:pointer;text-decoration:underline;}
+
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:90;display:flex;justify-content:flex-end;}
+.drawer-overlay[hidden]{display:none;}
+.drawer{background:var(--bg);width:min(620px,100%);height:100%;overflow-y:auto;box-shadow:-12px 0 40px rgba(0,0,0,.25);animation:drIn .18s ease-out;}
+@keyframes drIn{from{transform:translateX(28px);opacity:.5}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.drawer{animation:none;}}
+.drawer-head{background:var(--navy-2);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:2;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;}
+.drawer-head h2{font-size:17px;font-weight:600;line-height:1.3;}
+.drawer-meta{font-size:12px;color:rgba(255,255,255,.65);margin-top:3px;}
+.drawer-head .modal-close{color:rgba(255,255,255,.7);}
+.drawer-body{padding:16px 20px 60px;display:flex;flex-direction:column;gap:14px;}
+.d-sec{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.d-sec h3{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.d-sec h3 small{font-weight:400;color:var(--faint);font-size:11px;}
+.next-box{background:var(--surface);border:1px solid var(--border);border-left:5px solid var(--faint);border-radius:4px 10px 10px 4px;padding:14px 16px;}
+.next-box.b-danger{border-left-color:var(--danger-c);} .next-box.b-warn{border-left-color:var(--p1);} .next-box.b-ok{border-left-color:var(--ok);}
+.next-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;}
+.next-text{font-size:15px;font-weight:500;line-height:1.45;}
+.next-help{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.55;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.chip{font-size:11px;font-weight:600;padding:2px 9px;border-radius:10px;background:var(--danger-bg);color:var(--danger-c);border:1px solid var(--danger-border);}
+.chip.warn{background:var(--p1-bg);color:var(--p1);border-color:var(--p1-border);}
+.pending-step{margin-top:10px;padding:9px 11px;background:var(--surface-2);border-radius:6px;font-size:12.5px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;}
+.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+.d-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:500;}
+.d-field .st-select{min-width:0;padding-top:5px;padding-bottom:5px;}
+.d-input{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:12.5px;color:var(--text);outline:none;}
+.d-input:focus{border-color:var(--navy);}
+textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
+.crit-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.crit-row:last-child{border-bottom:none;}
+.crit-where{font-size:11px;color:var(--faint);display:block;margin-top:1px;}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0;}
+.seg button{border:none;background:var(--surface);font:inherit;font-size:11px;font-weight:600;padding:4px 9px;cursor:pointer;color:var(--muted);}
+.seg button+button{border-left:1px solid var(--border);}
+.seg button:focus-visible{outline:2px solid var(--navy);outline-offset:-2px;}
+.seg button.on-pend{background:var(--s-pend-bg);color:var(--s-pend-c);}
+.seg button.on-ok{background:var(--s-reg-bg);color:var(--s-reg-c);}
+.seg button.on-na{background:var(--s-anal-bg);color:var(--s-anal-c);}
+.auto-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;flex-shrink:0;}
+.auto-tag.ok{background:var(--s-reg-bg);color:var(--s-reg-c);} .auto-tag.pend{background:var(--s-pend-bg);color:var(--s-pend-c);}
+.doc-item{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:13px;line-height:1.4;cursor:pointer;}
+.doc-item input{margin-top:3px;accent-color:var(--navy);flex-shrink:0;}
+.doc-item.done span{color:var(--muted);text-decoration:line-through;}
+.d-note{font-size:12px;color:var(--muted);line-height:1.55;margin-top:8px;}
+.d-note.warnbox{background:var(--p1-bg);border:1px solid var(--p1-border);color:var(--text);padding:8px 10px;border-radius:6px;}
+.form-actions{display:flex;justify-content:flex-end;margin-top:10px;}
+.tl-item{display:grid;grid-template-columns:14px 1fr;gap:10px;padding:8px 0;position:relative;}
+.tl-item::before{content:'';position:absolute;left:6px;top:22px;bottom:-8px;width:2px;background:var(--border);}
+.tl-item:last-child::before{display:none;}
+.tl-dot{width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--faint);margin-top:3px;}
+.tl-item.contact .tl-dot{background:var(--navy);border-color:var(--navy);}
+.tl-item.import .tl-dot{border-color:var(--p1);}
+.tl-head{font-size:12px;color:var(--muted);}
+.tl-head strong{color:var(--text);font-weight:600;}
+.tl-text{font-size:13px;margin-top:2px;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.tl-sub{font-size:12px;margin-top:3px;color:var(--muted);}
+.tl-next{font-size:12px;margin-top:3px;color:var(--p1);font-weight:500;}
+.tl-empty{font-size:13px;color:var(--muted);padding:6px 0;}
+
+.act-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.act-contact-txt{display:block;margin-top:3px;color:var(--muted);font-size:12.5px;white-space:pre-wrap;}
+
+/* guia */
+.guia-wrap{max-width:860px;margin:0 auto;padding:24px 24px 80px;}
+.guia-intro{padding:16px 18px;background:var(--navy-2);color:#fff;border-radius:10px;margin-bottom:10px;}
+.guia-intro h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(22px,3.4vw,30px);font-weight:600;line-height:1.15;margin-bottom:6px;}
+.guia-intro p{font-size:13px;color:rgba(255,255,255,.72);max-width:64ch;}
+.guia-toc{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 6px;}
+.guia-toc a{font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:14px;color:var(--muted);text-decoration:none;background:var(--surface);}
+.guia-toc a:hover{border-color:var(--navy);color:var(--navy);}
+.g-sec{margin-top:30px;scroll-margin-top:12px;}
+.g-sec h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(19px,2.8vw,25px);font-weight:600;line-height:1.2;margin-bottom:4px;}
+.g-sec > p.g-lead{font-size:13px;color:var(--muted);margin-bottom:12px;max-width:70ch;}
+.g-steps{list-style:none;counter-reset:gs;display:flex;flex-direction:column;gap:0;border-left:2px solid var(--border);margin-left:12px;}
+.g-steps li{counter-increment:gs;position:relative;padding:0 0 16px 24px;font-size:13.5px;line-height:1.55;max-width:74ch;}
+.g-steps li::before{content:counter(gs);position:absolute;left:-13px;top:0;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+.g-steps li strong{display:block;font-size:13.5px;}
+.g-steps li span{color:var(--muted);}
+.g-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface);}
+.g-table{width:100%;border-collapse:collapse;font-size:13px;}
+.g-table th{text-align:left;padding:8px 12px;background:var(--surface-2);color:var(--muted);font-weight:600;font-size:12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.g-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.g-table tr:last-child td{border-bottom:none;}
+.g-table td:first-child{font-weight:600;white-space:nowrap;}
+.g-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+.g-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.55;}
+.g-card h4{font-size:13px;font-weight:600;margin-bottom:6px;}
+.g-card ul{padding-left:18px;}
+.g-card li{margin-bottom:3px;}
+.g-warn{margin-top:12px;padding:10px 14px;border-left:3px solid var(--p1);background:var(--p1-bg);border-radius:0 6px 6px 0;font-size:13px;line-height:1.55;}
+.g-faq{border:1px solid var(--border);border-radius:8px;background:var(--surface);margin-bottom:8px;}
+.g-faq summary{padding:10px 14px;font-size:13.5px;font-weight:500;cursor:pointer;}
+.g-faq p{padding:0 14px 12px;font-size:13px;color:var(--muted);line-height:1.55;}
+.copy-line{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;flex-wrap:wrap;}
+.copy-line .cl-label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:2px;}
+.copy-line .cl-text{font-size:13px;line-height:1.5;word-break:break-word;}
+.copy-line a{color:var(--navy);}
+@media(max-width:640px){.d-grid{grid-template-columns:1fr;}.guia-wrap{padding:16px 16px 60px;}}
+</style>
+</head>
+<body>
+
+<!-- APP -->
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <h1 class="app-title">Formandos</h1>
+    <button class="sem-badge" id="sem-badge" onclick="openSemModal()" title="Clique para alterar o semestre">2026.2</button>
+  </div>
+  <div class="header-right">
+    <span id="sync-label" class="sync-label sync-local">
+      <span class="sync-dot"></span>
+      <span id="sync-text">Conectando…</span>
+    </span>
+    <button class="btn btn-ghost" id="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+    <button class="btn btn-ghost" id="btn-export-formados" hidden onclick="exportCSVFormados()">↓ Exportar CSV</button>
+    <button class="btn btn-danger-ghost" id="btn-clear" onclick="confirmClear()">Limpar dados</button>
+    <button class="btn btn-primary" id="btn-import" onclick="openImportAlunos()">+ Importar alunos</button>
+    <button class="btn btn-primary" id="btn-import-formados" hidden onclick="openImportFormados()">+ Importar formados</button>
+    <button class="user-pill" id="user-pill" onclick="openNameModal(false)" title="Clique para alterar seu nome">
+      <span class="user-avatar" id="user-avatar">?</span>
+      <span id="user-pill-name">Identificar-me</span>
+    </button>
+  </div>
+</header>
+
+<!-- TAB NAV -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('alunos',this)">👥 Prováveis Formandos</button>
+  <button class="tab-btn" onclick="switchTab('formados',this)">🎓 Formados</button>
+  <button class="tab-btn" onclick="switchTab('regua',this)">💬 Régua de Comunicação</button>
+  <button class="tab-btn" onclick="switchTab('atividade',this)">📋 Atividade</button>
+  <button class="tab-btn" onclick="switchTab('guia',this)">📘 Guia do processo</button>
+</nav>
+
+<!-- ══ TAB: ALUNOS ══ -->
+<div id="tab-alunos" class="tab-panel active">
+
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-tile">
+      <span class="stat-num" id="s-total">0</span>
+      <span class="stat-label">Total</span>
+    </div>
+    <div class="stat-tile danger">
+      <span class="stat-num" id="s-doc-pend">0</span>
+      <span class="stat-label">Doc. pendente</span>
+    </div>
+    <div class="stat-tile warn">
+      <span class="stat-num" id="s-aac-pend">0</span>
+      <span class="stat-label">AAC pendente</span>
+    </div>
+    <div class="stat-tile ok">
+      <span class="stat-num" id="s-aptos">0</span>
+      <span class="stat-label">Aptos</span>
+    </div>
+    <div class="stat-tile danger">
+      <span class="stat-num" id="s-naoaptos">0</span>
+      <span class="stat-label">Não aptos</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-num" id="s-analise">0</span>
+      <span class="stat-label">Em análise</span>
+    </div>
+    <div class="stat-tile warn">
+      <span class="stat-num" id="s-bib-pend">0</span>
+      <span class="stat-label">Bib. pendente (interno)</span>
+    </div>
+    <div class="stat-tile danger">
+      <span class="stat-num" id="s-semcont">0</span>
+      <span class="stat-label">Sem contato 7d+</span>
+    </div>
+    <div class="stat-tile danger">
+      <span class="stat-num" id="s-prazo">0</span>
+      <span class="stat-label">Prazos vencidos</span>
+    </div>
+  </div>
+
+  <div class="filters-bar">
+    <input type="search" class="filter-search" id="f-search" placeholder="Buscar por nome, matrícula…" oninput="applyFilters()">
+    <select class="filter-select" id="f-turno" onchange="applyFilters()">
+      <option value="all">Todos os turnos</option>
+    </select>
+    <select class="filter-select" id="f-curso" onchange="applyFilters()">
+      <option value="all">Todos os cursos</option>
+    </select>
+    <select class="filter-select" id="f-doc" onchange="applyFilters()">
+      <option value="all">Doc: Todos</option>
+      <option value="pendente">Pendente</option>
+      <option value="entregue">Entregue</option>
+      <option value="regularizado">Regularizado</option>
+    </select>
+    <select class="filter-select" id="f-aac" onchange="applyFilters()">
+      <option value="all">AAC: Todos</option>
+      <option value="pendente">Pendente</option>
+      <option value="regularizado">Regularizado</option>
+      <option value="dispensado">Dispensado</option>
+    </select>
+    <select class="filter-select" id="f-apt" onchange="applyFilters()">
+      <option value="all">Aptidão: Todos</option>
+      <option value="em_analise">Em análise</option>
+      <option value="apto">Apto</option>
+      <option value="nao_apto">Não apto</option>
+    </select>
+    <select class="filter-select" id="f-bib" onchange="applyFilters()">
+      <option value="all">Biblioteca: Todos</option>
+      <option value="pendente">Pendente</option>
+      <option value="solicitado">Solicitado</option>
+      <option value="ok">OK</option>
+    </select>
+    <select class="filter-select" id="f-etapa" onchange="applyFilters()">
+      <option value="all">Etapa: Todas</option>
+      <option value="">Não conferido</option>
+      <option value="sem_processo">Sem processo</option>
+      <option value="2.0">2.0 Doc. pendente</option>
+      <option value="2.1">2.1 Revisão CSC</option>
+      <option value="3.0">3.0 Doc. aprovada</option>
+    </select>
+    <select class="filter-select" id="f-resp" onchange="applyFilters()">
+      <option value="all">Responsável: Todos</option>
+    </select>
+    <select class="filter-select" id="f-acomp" onchange="applyFilters()">
+      <option value="all">Acompanhamento: Todos</option>
+      <option value="semcont">Sem contato há 7+ dias</option>
+      <option value="nunca">Nunca contatado</option>
+      <option value="vencido">Prazo vencido</option>
+      <option value="semana">Prazo nos próximos 7 dias</option>
+      <option value="urgente">Ação urgente (vermelho)</option>
+    </select>
+    <select class="filter-select" id="f-base" onchange="applyFilters()">
+      <option value="ativos">Base: Ativos</option>
+      <option value="arq">Arquivados</option>
+      <option value="todos">Ativos e arquivados</option>
+    </select>
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="student-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Matrícula</th>
+          <th>Próxima ação</th>
+          <th>Curso</th>
+          <th>Nome Fantasia</th>
+          <th>Turno</th>
+          <th>Forma de Ingresso</th>
+          <th>Etapa Digitaliza</th>
+          <th>Documentação</th>
+          <th>AAC</th>
+          <th>Aptidão</th>
+          <th>Biblioteca</th>
+          <th>Responsável</th>
+          <th>Último contato</th>
+          <th>Último registro / Observações</th>
+        </tr>
+      </thead>
+      <tbody id="student-tbody">
+        <tr><td colspan="15" class="empty-state">
+          <p>Nenhum aluno cadastrado ainda.</p>
+          <p>Clique em <strong>+ Importar alunos</strong> para começar.</p>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /tab-alunos -->
+
+<!-- ══ TAB: FORMADOS ══ -->
+<div id="tab-formados" class="tab-panel">
+
+  <div class="stats-bar" id="fstats-bar">
+    <div class="stat-tile">
+      <span class="stat-num" id="fs-total">0</span>
+      <span class="stat-label">Total formados</span>
+    </div>
+    <div class="stat-tile ok">
+      <span class="stat-num" id="fs-conf">0</span>
+      <span class="stat-label">Confirmados</span>
+    </div>
+    <div class="stat-tile danger">
+      <span class="stat-num" id="fs-naop">0</span>
+      <span class="stat-label">Não participam</span>
+    </div>
+    <div class="stat-tile warn">
+      <span class="stat-num" id="fs-pend">0</span>
+      <span class="stat-label">Aguardando confirmação</span>
+    </div>
+  </div>
+
+  <div class="filters-bar">
+    <input type="search" class="filter-search" id="ff-search" placeholder="Buscar por nome, matrícula…" oninput="applyFormadosFilters()">
+    <select class="filter-select" id="ff-turno" onchange="applyFormadosFilters()">
+      <option value="all">Todos os turnos</option>
+    </select>
+    <select class="filter-select" id="ff-curso" onchange="applyFormadosFilters()">
+      <option value="all">Todos os cursos</option>
+    </select>
+    <select class="filter-select" id="ff-cer" onchange="applyFormadosFilters()">
+      <option value="all">Cerimônia: Todos</option>
+      <option value="pendente">Aguardando</option>
+      <option value="confirmado">Confirmado</option>
+      <option value="nao_participa">Não participa</option>
+    </select>
+    <span class="filter-count" id="ffilter-count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="student-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Matrícula</th>
+          <th>Curso</th>
+          <th>Turno</th>
+          <th>Confirmação Cerimônia</th>
+          <th>Observações</th>
+        </tr>
+      </thead>
+      <tbody id="formados-tbody">
+        <tr><td colspan="6" class="empty-state">
+          <p>Nenhum formado cadastrado ainda.</p>
+          <p>Clique em <strong>+ Importar formados</strong> para começar.</p>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /tab-formados -->
+
+<!-- ══ TAB: RÉGUA ══ -->
+<div id="tab-regua" class="tab-panel">
+  <div class="regua-wrap">
+
+    <div class="regua-dl-bar">
+      <div class="dl-pill">
+        <span class="dl-pill-date">01/12/2026</span>
+        <span class="dl-pill-desc">Documentação · Estágio · NPJ · TCC</span>
+      </div>
+      <div class="dl-pill">
+        <span class="dl-pill-date">08/12/2026</span>
+        <span class="dl-pill-desc">Solicitação de AAC externa</span>
+      </div>
+      <div class="dl-pill">
+        <span class="dl-pill-date">Abr – Set 2027</span>
+        <span class="dl-pill-desc">Cerimônia de Colação de Grau</span>
+      </div>
+    </div>
+
+    <div class="how-to">
+      <span>💡</span>
+      <span>Clique em <strong>Copiar texto</strong> em cada card e cole diretamente no WhatsApp. Os termos em <strong>*asteriscos*</strong> aparecem em negrito. Campos entre colchetes <strong>[…]</strong> precisam ser preenchidos antes do envio.</span>
+    </div>
+
+    <!-- Fase 1 -->
+    <div class="regua-phase">
+      <p class="phase-eyebrow c-p1">Fase 1 · Setembro – Dezembro 2026</p>
+      <h2 class="phase-name">Conclusão e Regularização</h2>
+      <p class="phase-desc">Orientar o aluno em cada exigência acadêmica e garantir que todas as pendências sejam resolvidas antes dos prazos finais.</p>
+      <hr class="phase-rule rule-p1">
+      <div id="phase1-cards"></div>
+    </div>
+
+    <!-- Fase 2 -->
+    <div class="regua-phase">
+      <p class="phase-eyebrow c-p2">Fase 2 · Janeiro – Setembro 2027</p>
+      <h2 class="phase-name">Caminho para a Colação de Grau</h2>
+      <p class="phase-desc">Comunicar o resultado da análise de aptidão, orientar sobre a cerimônia e acompanhar o formando até o evento.</p>
+      <hr class="phase-rule rule-p2">
+      <div class="inline-note">
+        <strong>Antes de enviar as mensagens desta fase:</strong> preencha data, horário e local da cerimônia nos campos marcados com <strong>[…]</strong>.
+      </div>
+      <div id="phase2-cards"></div>
+    </div>
+
+  </div>
+</div><!-- /tab-regua -->
+
+<!-- ══ TAB: ATIVIDADE ══ -->
+<div id="tab-atividade" class="tab-panel">
+  <div class="activity-wrap">
+    <div class="act-header">
+      <h2>Histórico de Atividade</h2>
+      <span id="act-sync-note" style="font-size:12px;color:var(--faint)"></span>
+    </div>
+    <div class="act-stats-row">
+      <div class="act-stat">
+        <div class="act-stat-num" id="act-stat-today">0</div>
+        <div class="act-stat-label">Atualizações hoje</div>
+      </div>
+      <div class="act-stat">
+        <div class="act-stat-num" id="act-stat-members">0</div>
+        <div class="act-stat-label">Pessoas ativas hoje</div>
+      </div>
+      <div class="act-stat">
+        <div class="act-stat-num" id="act-stat-total">0</div>
+        <div class="act-stat-label">Total registrado</div>
+      </div>
+    </div>
+    <div class="act-tools">
+      <input type="search" class="filter-search" id="act-search" placeholder="Buscar por aluno, pessoa ou texto" oninput="renderActivity()">
+      <select class="filter-select" id="act-type" onchange="renderActivity()">
+        <option value="all">Tudo</option>
+        <option value="contact">Contatos</option>
+        <option value="change">Mudanças de status</option>
+        <option value="import">Importações</option>
+      </select>
+    </div>
+    <div class="act-feed" id="act-feed">
+      <div class="act-empty">Nenhuma atividade registrada ainda.<br>Atualize algum status ou registre um contato para começar.</div>
+    </div>
+  </div>
+</div><!-- /tab-atividade -->
+
+<!-- ══ TAB: GUIA ══ -->
+<div id="tab-guia" class="tab-panel">
+  <div class="guia-wrap">
+    <div class="guia-intro">
+      <h2>Guia do processo de colação de grau</h2>
+      <p>Resumo prático do PGE 04.128, dos POPs 04.217 e 04.218, do treinamento Digitaliza e do FAQ. Use para consultar o que fazer em cada situação sem precisar abrir os documentos.</p>
+    </div>
+    <nav class="guia-toc" aria-label="Seções do guia">
+      <a href="#g-uso">Uso do painel</a><a href="#g-ciclo">Ciclo do semestre</a><a href="#g-etapas">Etapas do Digitaliza</a>
+      <a href="#g-digitaliza">Passo a passo</a><a href="#g-docs">Documentos</a><a href="#g-aptidao">Aptidão</a>
+      <a href="#g-especiais">Antecipada e especial</a><a href="#g-faq">Situações comuns</a><a href="#g-chamados">Chamados e links</a><a href="#g-siglas">Siglas</a>
+    </nav>
+
+    <section class="g-sec" id="g-uso">
+      <h2>Como usar o painel no dia a dia</h2>
+      <p class="g-lead">A regra de ouro: tudo o que você fizer com um aluno fica registrado na ficha dele. Assim, qualquer pessoa da equipe continua de onde você parou.</p>
+      <ol class="g-steps">
+        <li><strong>Identifique-se</strong><span>Seu nome aparece no canto superior direito. Sem identificação, o painel não deixa alterar nada, porque toda mudança precisa ter autor.</span></li>
+        <li><strong>Importe o farol do CSC toda semana</strong><span>Use + Importar alunos com a planilha mais recente. Documentação e etapa do Digitaliza são atualizadas e cada mudança entra no histórico do aluno.</span></li>
+        <li><strong>Trabalhe pela coluna Próxima ação</strong><span>Clique no nome do aluno para abrir a ficha. Ela mostra o que fazer, onde conferir e os documentos exigidos para a forma de ingresso dele.</span></li>
+        <li><strong>Registre cada contato</strong><span>Na ficha, use Registrar contato: canal, o que foi feito, o retorno do aluno e o próximo passo com prazo. Use Nota interna para passar um caso para outra pessoa.</span></li>
+        <li><strong>Revise quem ficou para trás</strong><span>O filtro Acompanhamento mostra alunos sem contato há mais de 7 dias e prazos combinados que venceram.</span></li>
+      </ol>
+    </section>
+
+    <section class="g-sec" id="g-ciclo">
+      <h2>Ciclo do semestre</h2>
+      <p class="g-lead">Marcos definidos no PGE 04.128. As datas exatas estão no calendário acadêmico e na aba Régua de Comunicação.</p>
+      <ol class="g-steps">
+        <li><strong>Início do calendário acadêmico</strong><span>O CSC envia a lista de prováveis formandos. Se não chegar por e-mail, a secretaria extrai do SIA em até 45 dias após o início do calendário (POP 04.218).</span></li>
+        <li><strong>Toda semana</strong><span>O CSC envia o farol de postagens da documentação. A secretaria confere o Digitaliza e cobra os alunos com pendência.</span></li>
+        <li><strong>Até o prazo do calendário</strong><span>O aluno envia os documentos pelo Portal do Aluno, em Pasta do Aluno > Meus Documentos. O prazo de análise do CSC é de 30 dias.</span></li>
+        <li><strong>Fechamento do período</strong><span>A secretaria verifica os critérios de aptidão de cada aluno (veja a seção Aptidão).</span></li>
+        <li><strong>15 dias após o fechamento</strong><span>O CSC avalia histórico, AAC, NPJ, ENADE, reconhecimento e documentação e envia a lista de aptos e não aptos. A secretaria comunica o motivo a cada aluno não apto.</span></li>
+        <li><strong>Colação oficial</strong><span>O CSC lança a colação no SIA. A unidade organiza a cerimônia, comunica dia e horário aos formandos e preenche o Forms de divulgação.</span></li>
+        <li><strong>Depois da colação</strong><span>Conferir no SIA se a presença foi registrada. O diploma digital é enviado por e-mail em até 60 dias.</span></li>
+        <li><strong>Quem não cumpriu a tempo</strong><span>Quem não regularizar nos dois primeiros meses após o fechamento vai para a colação especial, que acontece quinzenalmente, assim que resolver as pendências.</span></li>
+      </ol>
+    </section>
+
+    <section class="g-sec" id="g-etapas">
+      <h2>Etapas do processo no Digitaliza</h2>
+      <p class="g-lead">É a coluna Etapa Digitaliza do painel. Só a etapa 3.0 significa documentação validada para colação.</p>
+      <div class="g-table-wrap"><table class="g-table">
+        <thead><tr><th>Etapa</th><th>O que significa</th><th>O que fazer</th></tr></thead>
+        <tbody>
+          <tr><td>Sem processo</td><td>O processo de colação é criado automaticamente quando o aluno vira provável formando no SIA.</td><td>Conferir se o aluno está matriculado em todas as disciplinas que faltam. Enquanto não for provável formando, os documentos vão no processo original (Fase Beta ou Aluno).</td></tr>
+          <tr><td>2.0 Doc. pendente</td><td>Há documento pendente ou a validação feita pelo BKO na digitalização ainda não foi revista.</td><td>Validar todos os documentos, cobrar o que falta e, quando tudo estiver certo, enviar para 2.1.</td></tr>
+          <tr><td>2.1 Revisão CSC</td><td>O processo está com a equipe CSC Colação de Grau.</td><td>Aguardar. Nesta etapa não se abre chamado de reconsideração.</td></tr>
+          <tr><td>3.0 Doc. aprovada</td><td>Documentação validada para colação.</td><td>Conferir os demais critérios de aptidão.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="g-sec" id="g-digitaliza">
+      <h2>Passo a passo no Digitaliza</h2>
+      <div class="g-cols">
+        <div class="g-card"><h4>Encontrar o processo</h4><ul>
+          <li>Acessar o Digitaliza e clicar em Aluno (links na seção Chamados e links).</li>
+          <li>Marcar os tipos Aluno, Fase Beta e Colação de Grau.</li>
+          <li>Digitar a matrícula e clicar em Buscar.</li>
+          <li>Aparecem dois processos. Abrir o do tipo Colação de Grau.</li></ul></div>
+        <div class="g-card"><h4>Cumprir uma pendência</h4><ul>
+          <li>Clicar no ícone da câmera ou em Capturar Documentos.</li>
+          <li>Selecionar o documento válido, fazer o upload e Salvar.</li>
+          <li>Conferir se ficou como Digitalizado e clicar em Concluir Tarefa.</li></ul></div>
+        <div class="g-card"><h4>Enviar para revisão do CSC</h4><ul>
+          <li>Com todos os documentos validados, selecionar a etapa 2.1 Revisão de Colação.</li>
+          <li>Clicar em Salvar. A análise passa a ser do CSC.</li></ul></div>
+        <div class="g-card"><h4>Documento que não existe na pasta</h4><ul>
+          <li>Clicar no ícone + para adicionar o documento ao processo.</li>
+          <li>Depois de incluído, o aluno passa a ver o item em Meus Documentos.</li></ul></div>
+        <div class="g-card"><h4>Reprovar um documento</h4><ul>
+          <li>Clicar em Rejeitar, escolher a irregularidade e confirmar em Rejeitar.</li>
+          <li>Selecionar a etapa 2.0 Documentação Pendente para Colação e Salvar.</li></ul></div>
+        <div class="g-card"><h4>Mover ou copiar imagem</h4><ul>
+          <li>Clicar no ícone Copiar e escolher Mover ou Copiar, depois Salvar.</li>
+          <li>Mover tira a imagem do documento de origem. Copiar mantém nos dois.</li></ul></div>
+      </div>
+      <p class="g-warn">O slide 11 do treinamento mostra a etapa 3.0 ao reprovar, mas o slide 13 manda voltar para 2.0. Documento reprovado precisa voltar para 2.0, senão o processo fica como aprovado. Em caso de dúvida, confirme com o CSC.</p>
+    </section>
+
+    <section class="g-sec" id="g-docs">
+      <h2>Documentos exigidos por forma de ingresso</h2>
+      <p class="g-lead">A ficha do aluno já mostra a lista certa para cada um. A Pasta do Aluno exibe todos os documentos da vida acadêmica, então cobre só os exigidos para o diploma.</p>
+      <div class="g-cols">
+        <div class="g-card"><h4>Vestibular ou ENEM</h4><ul>
+          <li>Certidão de nascimento ou casamento</li><li>Documento de identificação civil dentro da validade</li><li>CPF</li>
+          <li>Conclusão do ensino médio: histórico escolar, certificado ou diploma com a informação de conclusão. Declaração e certidão não são aceitas.</li>
+          <li>Estrangeiro: RNE dentro da validade</li></ul></div>
+        <div class="g-card"><h4>Matrícula sem vestibular (MSV)</h4><ul>
+          <li>Diploma de nível superior registrado, frente e verso</li>
+          <li>CPF e certidão de nascimento ou casamento (exigidos para todas as formas de ingresso desde a revisão 07 do PGE)</li></ul></div>
+        <div class="g-card"><h4>Transferência externa</h4><ul>
+          <li>Histórico escolar do ensino superior da instituição de origem</li>
+          <li>Conclusão do ensino médio (mesma regra do vestibular)</li>
+          <li>CPF e certidão de nascimento ou casamento</li></ul></div>
+        <div class="g-card"><h4>Casos específicos</h4><ul>
+          <li>Segunda licenciatura: diploma de graduação em licenciatura.</li>
+          <li>Formação pedagógica: diploma de nível superior.</li>
+          <li>Ensino médio no exterior: certificado ou diploma, tradução e equivalência emitida pela Secretaria de Educação.</li>
+          <li>Graduação no exterior: diploma traduzido por tradutor juramentado e revalidado em IES federal.</li>
+          <li>Histórico de IES do exterior: tradução juramentada, chancela do consulado e, a partir de 2016.2, apostilamento de Haia.</li></ul></div>
+      </div>
+    </section>
+
+    <section class="g-sec" id="g-aptidao">
+      <h2>Critérios de aptidão e onde conferir</h2>
+      <div class="g-table-wrap"><table class="g-table">
+        <thead><tr><th>Critério</th><th>Onde conferir</th></tr></thead>
+        <tbody>
+          <tr><td>Disciplinas</td><td>Aprovado em todas as disciplinas do currículo. SIA, Histórico Escolar.</td></tr>
+          <tr><td>AAC</td><td>Mínimo de horas cumprido. SIA, Histórico de Atividade Complementar.</td></tr>
+          <tr><td>Estágio / NPJ</td><td>Estágio obrigatório concluído (NPJ para Direito). SIA, Administra Curso > Estágio > Lançamento de Estágio para Aluno.</td></tr>
+          <tr><td>ENADE</td><td>Sem pendência. Presencial: coordenador do curso. EAD: Portal Conexões.</td></tr>
+          <tr><td>Documentação</td><td>Processo na etapa 3.0 do Digitaliza.</td></tr>
+          <tr><td>Reconhecimento</td><td>Reconhecimento do curso cadastrado no Histórico Escolar.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="g-warn"><strong>ENADE.</strong> Aluno inscrito que preencheu o questionário e faltou à prova pede dispensa no portal do ENADE, dentro do cronograma do edital. Aluno de curso elegível que não foi inscrito: no presencial, a secretaria avisa o coordenador, que aciona o Comitê ENADE (enade@estacio.br). No EAD, a secretaria envia o pedido ao mesmo e-mail com CPF e código do curso no e-MEC.</p>
+      <p class="g-warn"><strong>Nada consta da biblioteca</strong> é controle interno da unidade. Desde a revisão 04 do PGE o CSC não valida esse item, então ele não impede a colação.</p>
+    </section>
+
+    <section class="g-sec" id="g-especiais">
+      <h2>Colação antecipada e especial</h2>
+      <div class="g-cols">
+        <div class="g-card"><h4>Antecipada</h4><ul>
+          <li>Só com urgência comprovada: convocação de concurso público ou oportunidade de emprego com prazo datado.</li>
+          <li>O aluno agenda atendimento e apresenta o comprovante.</li>
+          <li>A secretaria anota curso, matrícula e nome, confere o comprovante e verifica todas as exigências acadêmicas e documentais.</li>
+          <li>Abre o requerimento com o comprovante anexado. O CSC defere e informa a data, ou devolve com a pendência.</li>
+          <li>Se o histórico ainda não fechou: no presencial, a secretaria lança as notas manualmente; no digital, pede o fechamento ao Relacionamento com Alunos Digital. Só depois solicita a antecipação.</li></ul></div>
+        <div class="g-card"><h4>Especial</h4><ul>
+          <li>Para quem não cumpriu as exigências a tempo da colação oficial (dois primeiros meses após o fechamento).</li>
+          <li>Pode regularizar a qualquer tempo e entra na colação quinzenal.</li>
+          <li>Concluintes antes de 2014: abrir o requerimento Solicitar Colação de Grau Especial e encaminhar para a etapa CSC Colação de Grau.</li></ul></div>
+      </div>
+    </section>
+
+    <section class="g-sec" id="g-faq">
+      <h2>Situações comuns</h2>
+      <details class="g-faq"><summary>O aluno não tem processo de colação no Digitaliza</summary><p>O processo é criado automaticamente quando o aluno é provável formando ou formando no SIA. Ele precisa estar matriculado em todas as disciplinas que faltam para concluir o curso e constar no farol de colação.</p></details>
+      <details class="g-faq"><summary>O aluno ainda não é provável formando e quer enviar documentos</summary><p>Ele deve postar no processo original (Fase Beta ou Aluno). Quando virar provável formando, o processo de colação é criado.</p></details>
+      <details class="g-faq"><summary>Aparecem no SIA Aluno documentos pendentes que não são de colação</summary><p>A Pasta do Aluno mostra todos os documentos exigidos e entregues na vida acadêmica. Para a colação, só precisam ser regularizados os exigidos para o diploma.</p></details>
+      <details class="g-faq"><summary>O aluno enviou só a frente do documento</summary><p>Depois de enviar, ele precisa aguardar a validação. Oriente a sempre enviar frente e verso em um único PDF.</p></details>
+      <details class="g-faq"><summary>Documento rejeitado ou aprovado por engano</summary><p>Se o processo estiver em 2.1, aguarde a validação do CSC. Em qualquer outra etapa, abra o chamado de reconsideração (seção Chamados e links).</p></details>
+      <details class="g-faq"><summary>Preciso pedir um documento que não está na pasta</summary><p>Adicione pelo ícone + dentro do processo de colação.</p></details>
+      <details class="g-faq"><summary>Como saber se o aluno já colou grau</summary><p>SIA > Formação Acadêmica > Alunos > Cadastro de Alunos > matrícula > Continuar. Em Validação para Colação/Diplomação, veja Data Colação Agendada: em branco significa sem agendamento; SIM com data significa formado com presença registrada; NÃO INFORMADO com data significa colação agendada, mas presença ainda não registrada.</p></details>
+    </section>
+
+    <section class="g-sec" id="g-chamados">
+      <h2>Chamados e links</h2>
+      <div class="copy-line"><div><span class="cl-label">Chamado: sem acesso ao Digitaliza Aluno</span><span class="cl-text">TI > Controle de Acesso > Digitaliza (GED) > Inclusão de usuário Digitaliza. Selecionar Aluno e Digitaliza_Aluno_Secretaria.</span></div><button class="copy-btn" onclick="copyTxt(this,'TI > Controle de Acesso > Digitaliza (GED) > Inclusão de usuário Digitaliza. Selecionar Aluno e Digitaliza_Aluno_Secretaria.')">Copiar</button></div>
+      <div class="copy-line"><div><span class="cl-label">Chamado: reconsideração de análise (não usar em 2.1)</span><span class="cl-text">CSC > Serviços Acadêmicos > Ingresso à Saída de Alunos > Colação de Grau > Reconsideração de Análise Digitaliza, Colação de Grau: Reconsideração</span></div><button class="copy-btn" onclick="copyTxt(this,'CSC > Serviços Acadêmicos > Ingresso à Saída de Alunos > Colação de Grau > Reconsideração de Análise Digitaliza - Colação de Grau: Reconsideração')">Copiar</button></div>
+      <div class="copy-line"><div><span class="cl-label">Digitaliza, entrada geral</span><span class="cl-text"><a href="https://digitaliza.estacio.br/geral_estacio/" target="_blank" rel="noopener">digitaliza.estacio.br/geral_estacio</a></span></div><button class="copy-btn" onclick="copyTxt(this,'https://digitaliza.estacio.br/geral_estacio/')">Copiar</button></div>
+      <div class="copy-line"><div><span class="cl-label">Digitaliza Aluno, acesso direto</span><span class="cl-text"><a href="https://digitaliza.estacio.br/getdoc_aluno/" target="_blank" rel="noopener">digitaliza.estacio.br/getdoc_aluno</a></span></div><button class="copy-btn" onclick="copyTxt(this,'https://digitaliza.estacio.br/getdoc_aluno/')">Copiar</button></div>
+      <div class="copy-line"><div><span class="cl-label">SIA (somente na rede interna)</span><span class="cl-text">siaadm.estacio.rj.br. Prováveis formandos: Formação Acadêmica > Alunos > Cadastro de Alunos > Relatórios > Prováveis Formandos (tipo de curso, instituição, semestre, campus, critério, Prosseguir).</span></div><button class="copy-btn" onclick="copyTxt(this,'http://siaadm.estacio.rj.br/')">Copiar</button></div>
+      <div class="copy-line"><div><span class="cl-label">Orientação ao aluno para enviar documentos</span><span class="cl-text">Portal do Aluno > Pasta do Aluno > Meus Documentos. Digitalize frente e verso em um único PDF, escolha o arquivo e clique em Submeter.</span></div><button class="copy-btn" onclick="copyTxt(this,'Para enviar seus documentos: acesse o Portal do Aluno > Pasta do Aluno > Meus Documentos. Digitalize frente e verso em um único PDF, escolha o arquivo e clique em Submeter. Depois do envio, aguarde a validação.')">Copiar</button></div>
+    </section>
+
+    <section class="g-sec" id="g-siglas">
+      <h2>Siglas</h2>
+      <div class="g-table-wrap"><table class="g-table"><tbody>
+        <tr><td>AAC</td><td>Atividade Acadêmica Complementar</td></tr>
+        <tr><td>BKO</td><td>Equipe de back office que valida documentos na digitalização</td></tr>
+        <tr><td>CSC</td><td>Centro de Serviços Compartilhados</td></tr>
+        <tr><td>ENADE</td><td>Exame Nacional de Desempenho dos Estudantes</td></tr>
+        <tr><td>GED</td><td>Gestão Eletrônica de Documentos (o Digitaliza)</td></tr>
+        <tr><td>MSV</td><td>Matrícula sem Vestibular</td></tr>
+        <tr><td>NPJ</td><td>Núcleo de Prática Jurídica</td></tr>
+        <tr><td>RNE</td><td>Registro Nacional de Estrangeiros</td></tr>
+        <tr><td>SIA</td><td>Sistema de Informações Acadêmicas</td></tr>
+        <tr><td>SSA</td><td>Secretaria Setorial de Alunos</td></tr>
+      </tbody></table></div>
+    </section>
+  </div>
+</div><!-- /tab-guia -->
+
+<!-- ── FICHA DO ALUNO ── -->
+<div id="drawer" class="drawer-overlay" hidden onclick="if(event.target===this) closeDrawer()">
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-name">
+    <div class="drawer-head">
+      <div><h2 id="dr-name"></h2><div class="drawer-meta" id="dr-meta"></div></div>
+      <button class="modal-close" onclick="closeDrawer()" aria-label="Fechar ficha">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div id="dr-live"></div>
+      <section class="d-sec">
+        <h3>Registrar contato <small>fica salvo no histórico, não é apagado</small></h3>
+        <div class="d-grid">
+          <div class="d-field"><label for="c-canal">Canal</label>
+            <select id="c-canal" class="d-input">
+              <option>WhatsApp</option><option>Telefone</option><option>E-mail</option><option>Presencial</option><option>Mensagem no portal</option><option value="Nota interna">Nota interna (passagem de caso)</option>
+            </select></div>
+          <div class="d-field"><label for="c-retorno">Retorno do aluno</label><input id="c-retorno" class="d-input" placeholder="Ex.: vai enviar até sexta"></div>
+        </div>
+        <div class="d-field" style="margin-top:10px"><label for="c-resumo">O que foi feito ou combinado *</label><textarea id="c-resumo" class="d-input" placeholder="Ex.: informei que falta o histórico do ensino médio; certidão não é aceita"></textarea></div>
+        <div class="d-grid" style="margin-top:10px">
+          <div class="d-field"><label for="c-prox">Próximo passo</label><input id="c-prox" class="d-input" placeholder="Ex.: conferir se postou no Digitaliza"></div>
+          <div class="d-field"><label for="c-prazo">Prazo do próximo passo</label><input id="c-prazo" type="date" class="d-input"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="saveContact()">Registrar contato</button></div>
+      </section>
+      <section class="d-sec">
+        <h3>Histórico do aluno <small id="dr-tl-count"></small></h3>
+        <div id="dr-tl"></div>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<!-- ── IMPORT MODAL ── -->
+<div id="import-modal" hidden class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Importar Alunos</h2>
+      <button class="modal-close" onclick="closeImport()">✕</button>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="imp-1" class="modal-body">
+      <p class="modal-desc">Selecione o arquivo ou cole o conteúdo abaixo. Formatos aceitos: XLSX, CSV, TSV.</p>
+
+      <input type="file" id="file-input" accept=".csv,.tsv,.txt,.xlsx,.xls,.json" style="display:none" onchange="handleFileSelect(event)">
+      <div class="file-drop" id="file-drop"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="file-drop-icon">📂</div>
+        <div class="file-drop-title">Clique para selecionar ou arraste o arquivo aqui</div>
+        <div class="file-drop-sub">XLSX · CSV · TSV · backup .json</div>
+        <div class="file-drop-name" id="file-drop-name" hidden></div>
+      </div>
+
+      <div class="file-or">ou cole manualmente</div>
+      <textarea id="csv-input" class="csv-textarea" placeholder="Cole aqui o conteúdo do CSV ou planilha copiada…" oninput="loadedGrid=null"></textarea>
+      <p id="imp-err" class="import-warning" hidden></p>
+    </div>
+    <div id="imp-1-foot" class="modal-footer">
+      <button class="btn btn-ghost-dark" onclick="closeImport()">Cancelar</button>
+      <button class="btn btn-primary" onclick="analyzeCSV()">Analisar →</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="imp-2" class="modal-body" hidden>
+      <p class="modal-desc">Mapeie as colunas do arquivo. Os campos marcados com * são obrigatórios.</p>
+      <div class="col-map">
+        <div class="col-map-row col-map-required"><label>Nome do aluno</label><select id="map-nome"></select></div>
+        <div class="col-map-row col-map-required"><label>Matrícula / RA</label><select id="map-mat"></select></div>
+        <div class="col-map-row"><label>Curso</label><select id="map-curso"></select></div>
+        <div class="col-map-row"><label>Nome Fantasia</label><select id="map-fantasia"></select></div>
+        <div class="col-map-row"><label>Turno</label><select id="map-turno"></select></div>
+        <div class="col-map-row"><label>Forma de Ingresso</label><select id="map-ingresso"></select></div>
+        <div class="col-map-row"><label>Status Documentação</label><select id="map-doc-status"></select></div>
+        <div class="col-map-row map-alunos-only"><label>Etapa Digitaliza (Situação Colação)</label><select id="map-etapa"></select></div>
+        <div class="col-map-row map-alunos-only"><label>Nada Consta Biblioteca</label><select id="map-bib"></select></div>
+      </div>
+      <p class="modal-note map-alunos-only">💡 Use o farol do CSC. Se o arquivo tiver a situação documental (DOCS) e a situação da colação (2.0, 2.1, 3.0), mapeie as colunas acima: o painel atualiza os alunos e registra cada mudança no histórico. Responsável, critérios, contatos e observações são mantidos.</p>
+      <p class="preview-label">Pré-visualização (primeiros 5 registros)</p>
+      <div class="preview-table-wrap"><div id="import-preview"></div></div>
+      <div id="import-warning" hidden class="import-warning"></div>
+      <label id="imp-sync" class="map-alunos-only" hidden style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);font-size:13px;line-height:1.45;cursor:pointer">
+        <input type="checkbox" id="imp-sync-chk" checked style="margin-top:3px;accent-color:var(--navy)">
+        <span id="imp-sync-txt"></span>
+      </label>
+    </div>
+    <div id="imp-2-foot" class="modal-footer" hidden>
+      <button class="btn btn-ghost-dark" onclick="backStep1()">← Voltar</button>
+      <button class="btn btn-primary" id="btn-do-import" onclick="doImport()">Importar</button>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="imp-3" class="modal-body" hidden>
+      <div class="progress-bar"><div id="progress-fill" class="progress-fill" style="width:0%"></div></div>
+      <p class="progress-label" id="progress-label">Importando…</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div id="imp-4" class="modal-body" hidden>
+      <div class="import-success">
+        <div class="success-icon">✓</div>
+        <p class="success-msg" id="success-msg"></p>
+        <button class="btn btn-primary" onclick="closeImport()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM CLEAR MODAL ── -->
+<div id="confirm-modal" hidden class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2 id="clr-title">Limpar todos os dados?</h2>
+      <button class="modal-close" onclick="closeClear()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>Esta ação removerá <strong>todos os alunos</strong> e os status registrados. Não pode ser desfeita. O histórico de contatos e de atividades é mantido.</p>
+      <div id="clr-create" hidden>
+        <p class="d-note warnbox" style="margin:12px 0">Ainda não existe senha para limpar os dados. Crie uma agora e guarde com a coordenação. Nada será apagado neste momento: depois de criar, a senha será pedida em toda limpeza.</p>
+        <div class="d-field"><label for="clr-new1">Nova senha (mínimo 4 caracteres)</label><input id="clr-new1" type="password" class="d-input" autocomplete="new-password"></div>
+        <div class="d-field" style="margin-top:8px"><label for="clr-new2">Repita a senha</label><input id="clr-new2" type="password" class="d-input" autocomplete="new-password" onkeydown="if(event.key==='Enter') clearAllData()"></div>
+      </div>
+      <div id="clr-ask" hidden style="margin-top:12px">
+        <div class="d-field"><label for="clr-pwd">Senha para limpar os dados</label><input id="clr-pwd" type="password" class="d-input" autocomplete="off" onkeydown="if(event.key==='Enter') clearAllData()"></div>
+        <div id="clr-change" hidden style="margin-top:8px">
+          <div class="d-field"><label for="clr-chg1">Nova senha</label><input id="clr-chg1" type="password" class="d-input" autocomplete="new-password"></div>
+          <div class="d-field" style="margin-top:8px"><label for="clr-chg2">Repita a nova senha</label><input id="clr-chg2" type="password" class="d-input" autocomplete="new-password"></div>
+        </div>
+        <p class="d-note"><button class="link-btn" id="clr-change-link" onclick="toggleChangePwd()">Alterar a senha</button></p>
+      </div>
+      <p id="clr-err" class="d-note" style="color:var(--danger-c);font-weight:600" hidden></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost-dark" onclick="closeClear()">Cancelar</button>
+      <button class="btn btn-danger" id="clr-btn" onclick="clearAllData()">Sim, limpar tudo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAME MODAL ── -->
+<div id="gas-modal" hidden class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header"><h2>Acesso ao painel</h2></div>
+    <div class="modal-body">
+      <p class="modal-desc">Digite a chave de acesso da equipe. Ela é pedida uma vez em cada computador.</p>
+      <div id="gas-url-row" class="d-field" style="margin-bottom:10px"><label for="gas-url">URL do Google Apps Script (termina em /exec)</label><input id="gas-url" class="d-input" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div class="d-field"><label for="gas-key">Chave de acesso</label><input id="gas-key" class="d-input" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter') enviarCredenciais()"></div>
+      <p id="gas-aviso" class="d-note" style="color:var(--danger-c);font-weight:600" hidden></p>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="enviarCredenciais()">Entrar</button></div>
+  </div>
+</div>
+
+<div id="name-modal" hidden class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2>Identificação</h2>
+      <button class="modal-close" onclick="closeNameModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="name-modal-inner">
+        <div class="name-modal-icon">👤</div>
+        <h3>Como você se chama?</h3>
+        <p>Seu nome será registrado nas atualizações que você fizer no painel, para que a equipe saiba quem realizou cada alteração.</p>
+        <input type="text" id="name-input" class="name-input" placeholder="Seu nome completo" maxlength="60"
+               onkeydown="if(event.key==='Enter') saveUserName()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost-dark" id="name-cancel-btn" onclick="closeNameModal()">Agora não</button>
+      <button class="btn btn-primary" onclick="saveUserName()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SEMESTER MODAL ── -->
+<div id="sem-modal" hidden class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2>Semestre</h2>
+      <button class="modal-close" onclick="closeSemModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Informe o semestre letivo exibido no painel (ex: 2026.2).</p>
+      <input type="text" id="sem-input" class="name-input" placeholder="2026.2" maxlength="20"
+             onkeydown="if(event.key==='Enter') saveSem()">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost-dark" onclick="closeSemModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSem()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── TAB NAV ── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  const isAlunos   = id === 'alunos';
+  const isFormados = id === 'formados';
+  document.getElementById('btn-export').hidden          = !isAlunos;
+  document.getElementById('btn-export-formados').hidden = !isFormados;
+  document.getElementById('btn-clear').hidden           = !isAlunos;
+  document.getElementById('btn-import').hidden          = !isAlunos;
+  document.getElementById('btn-import-formados').hidden = !isFormados;
+  if (id === 'atividade') renderActivity();
+  if (id === 'formados')  renderFormados();
+}
+
+/* ── ICONS (régua) ── */
+const ICON_COPY  = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M3.5 10.5H3A1.5 1.5 0 011.5 9V3A1.5 1.5 0 013 1.5h6A1.5 1.5 0 0110.5 3v.5" stroke-linecap="round"/></svg>`;
+const ICON_CHECK = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>`;
+
+/* ── RÉGUA MESSAGES ── */
+const WA_TEXTS = {};
+let WA_IDX = 0;
+
+function fmtWA(raw) {
+  return raw
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*(.*?)\*/g,'<strong>$1</strong>')
+    .replace(/_(.*?)_/g,'<em>$1</em>')
+    .replace(/\n/g,'<br>');
+}
+
+function buildCard(msg) {
+  const i = WA_IDX++;
+  WA_TEXTS[i] = msg.text;
+  const badgeH = msg.badge ? `<span class="badge badge-${msg.badge}">${msg.badgeLabel}</span>` : '';
+  return `
+<div class="msg-card">
+  <div class="card-top">
+    <span class="msg-num">${msg.num}</span>
+    <div>
+      <div class="title-row">
+        <span class="msg-title">${msg.title}</span>${badgeH}
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-timing">${msg.timing}</span>
+        <span class="tag tag-audience">${msg.audience}</span>
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <p class="bubble-label">Texto para o grupo</p>
+    <div class="bubble">${fmtWA(msg.text)}</div>
+  </div>
+  <div class="card-foot">
+    <span class="objective-txt">${msg.objective}</span>
+    <button class="copy-btn" onclick="copyWA(this,${i})">${ICON_COPY}<span>Copiar texto</span></button>
+  </div>
+</div>`;
+}
+
+function copyWA(btn, i) {
+  const text = WA_TEXTS[i];
+  const done = () => {
+    btn.classList.add('copied');
+    btn.innerHTML = ICON_CHECK + '<span>Copiado!</span>';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = ICON_COPY + '<span>Copiar texto</span>'; }, 2200);
+  };
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(done).catch(() => clipFallback(text, done));
+  else clipFallback(text, done);
+}
+function clipFallback(text, cb) {
+  const ta = Object.assign(document.createElement('textarea'), {value:text,style:'position:fixed;opacity:0'});
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{document.execCommand('copy');}catch(e){}
+  document.body.removeChild(ta); cb();
+}
+
+const phase1msgs = [
+  {num:'01',badge:null,badgeLabel:'',title:'Boas-Vindas ao Grupo',timing:'Entrada no grupo',audience:'Todos os formandos',objective:'Apresentar o canal e definir como ele funcionará',
+  text:`🎓 Seja bem-vindo(a) ao grupo *Jornada da Colação de Grau – Formandos 2026.2*.
+
+Este é o canal oficial de orientação para os prováveis formandos deste semestre.
+
+Ao longo dos próximos meses, você receberá informações sobre:
+📄 Documentação
+📚 Atividades Acadêmicas Complementares (AAC)
+⚖️ NPJ, Estágio e TCC (quando aplicável ao seu curso)
+📝 ENADE
+🎓 Processo de aptidão e Colação de Grau
+
+⚠️ *Atenção:* estar neste grupo não significa que você já está apto(a) à colação. A aptidão depende do cumprimento de todas as exigências acadêmicas do seu curso.
+
+Para dúvidas sobre a *sua situação individual*, utilize os canais de atendimento da unidade. Este grupo é reservado exclusivamente para orientações oficiais.`},
+  {num:'02',badge:null,badgeLabel:'',title:'Você é um Provável Formando',timing:'Início de setembro',audience:'Todos',objective:'Gerar atenção e explicar o significado de "provável formando"',
+  text:`🎓 *Você é um PROVÁVEL FORMANDO 2026.2!*
+
+Isso significa que, com base no seu histórico acadêmico atual, você tem previsão de conclusão do curso neste semestre.
+
+*Mas atenção:* a conclusão efetiva depende do cumprimento de todas as exigências do curso e da regularização de eventuais pendências dentro dos prazos estabelecidos.
+
+Ao longo dos próximos meses, você receberá orientações sobre cada etapa. Acompanhe este grupo — algumas mensagens trarão prazos importantes que não podem ser perdidos.
+
+👉 Se você acredita que foi incluído(a) por engano, entre em contato com a secretaria da unidade.`},
+  {num:'03',badge:'p1',badgeLabel:'Regularização',title:'Documentação',timing:'1ª quinzena de setembro',audience:'Todos',objective:'Informar os documentos exigidos para o diploma e como enviar',
+  text:`📄 *DOCUMENTAÇÃO PARA A COLAÇÃO, prazo final: 01/12/2026*
+
+Para colar grau, sua documentação precisa estar *aprovada* no sistema.
+
+✅ *Documentos exigidos:*
+• Certidão de nascimento ou casamento
+• Documento de identidade dentro da validade
+• CPF
+• Comprovante de conclusão do Ensino Médio: histórico escolar, certificado ou diploma com a informação de conclusão (*declaração e certidão não são aceitas*)
+
+Ingressou por *transferência*? Também é preciso o histórico da faculdade de origem.
+Ingressou como *portador de diploma*? É preciso o diploma de nível superior registrado, frente e verso.
+Estrangeiros: RNE dentro da validade.
+
+📌 *Como enviar:* Portal do Aluno > Pasta do Aluno > Meus Documentos. Digitalize frente e verso em um *único PDF*, escolha o arquivo e clique em *Submeter*. Depois é só aguardar a validação.
+
+⚠️ *Prazo final: 01/12/2026.* Documentação não aprovada impede a colação de grau.
+
+Dúvidas? Procure a secretaria da unidade.`},
+  {num:'04',badge:'p1',badgeLabel:'Regularização',title:'Atividades Acadêmicas Complementares (AAC)',timing:'Final de setembro',audience:'Todos',objective:'Orientar sobre a carga exigida, como consultar e o prazo de regularização',
+  text:`📚 *ATIVIDADES ACADÊMICAS COMPLEMENTARES (AAC)*
+
+As AAC são obrigatórias para a conclusão do curso. Confira agora a sua situação!
+
+✅ *O que você precisa saber:*
+• A carga horária exigida varia conforme o curso — consulte o seu
+• As horas precisam estar lançadas e reconhecidas no sistema até a data-limite
+• Solicitações de AAC *externas* têm prazo de envio até *08/12/2026*
+
+📌 *Como consultar:* acesse o portal do aluno → AAC → verifique as horas já reconhecidas e as pendentes.
+
+⚠️ Se você ainda tem horas a regularizar, não deixe para a última hora. O processo de análise e reconhecimento leva tempo.
+
+Dúvidas? Procure a secretaria da unidade.`},
+  {num:'05',badge:'p1',badgeLabel:'Regularização',title:'NPJ, Estágio Supervisionado e TCC',timing:'Outubro',audience:'Cursos com essas exigências',objective:'Alertar sobre as atividades obrigatórias e prazo de entrega',
+  text:`⚖️ *NPJ, ESTÁGIO SUPERVISIONADO E TCC — Prazo final: 01/12/2026*
+
+Se o seu curso exige Núcleo de Prática Jurídica (NPJ), Estágio Supervisionado ou Trabalho de Conclusão de Curso (TCC), *verifique agora se você está em dia.*
+
+✅ *O que verificar:*
+• Carga horária cumprida e registrada no sistema
+• Documentação de estágio entregue à coordenação
+• Situação do NPJ regularizada no sistema
+• TCC aprovado e entregue (quando aplicável)
+
+⚠️ *Prazo final: 01/12/2026.* Pendências nessas atividades podem impedir a conclusão do curso e a participação na colação de grau.
+
+Dúvidas sobre a sua situação? Procure a coordenação do seu curso.`},
+  {num:'06',badge:'p1',badgeLabel:'Conforme calendário',title:'ENADE',timing:'Conforme calendário INEP/MEC',audience:'Alunos selecionados',objective:'Orientar os selecionados e reforçar a obrigatoriedade',
+  text:`📝 *ENADE — Atenção aos alunos selecionados!*
+
+O Exame Nacional de Desempenho dos Estudantes (ENADE) é obrigatório para os alunos selecionados pelo MEC.
+
+✅ *Se você foi selecionado(a):*
+• A participação é obrigatória por lei
+• A não participação sem justificativa válida pode gerar restrição na obtenção do diploma
+• Fique atento(a) ao calendário oficial e às orientações da instituição
+
+📌 Verifique sua situação no portal do aluno.
+
+Em breve divulgaremos mais informações sobre datas e procedimentos.
+
+Qualquer dúvida, entre em contato com a secretaria da unidade.`},
+  {num:'07',badge:'critical',badgeLabel:'⚠ Prazo próximo',title:'Alerta Geral — Todos os Prazos',timing:'Início de novembro',audience:'Todos',objective:'Reforçar todos os prazos finais e criar senso de urgência',
+  text:`🚨 *ATENÇÃO, FORMANDO(A) — OS PRAZOS ESTÃO CHEGANDO!*
+
+Este é o momento de conferir cada item da sua regularização:
+
+📄 *Documentação* → Prazo: *01/12/2026*
+📚 *AAC externa* → Prazo: *08/12/2026*
+⚖️ *Estágio / NPJ / TCC* → Prazo: *01/12/2026*
+📝 *ENADE* → Conforme calendário oficial
+
+⚠️ *Não deixe para a última hora.* Pendências não resolvidas dentro dos prazos podem impedir a conclusão do curso e a participação na colação de grau.
+
+Se você tiver dúvidas sobre a sua situação individual, procure a secretaria ou a coordenação do seu curso o quanto antes.`},
+  {num:'08',badge:'critical',badgeLabel:'⚠ Urgente',title:'Contagem Regressiva — 2 Semanas',timing:'Meados de novembro',audience:'Todos',objective:'Gerar urgência real e direcionar para ação imediata',
+  text:`⏳ *Faltam aproximadamente 2 semanas para o prazo final!*
+
+Se você ainda tem pendências, *este é o momento de agir.*
+
+🔴 *Documentação* → acesse o portal e regularize
+🔴 *AAC* → solicite o reconhecimento das horas no sistema
+🔴 *Estágio / NPJ / TCC* → entregue a documentação na coordenação
+🔴 *ENADE* → confirme sua situação no portal
+
+📅 *Prazo final: 01/12/2026 (exceto AAC externa: 08/12/2026)*
+
+Não perca esses prazos. A colação de grau é o resultado de toda a sua trajetória — não deixe uma pendência administrativa atrapalhar esse momento.`},
+  {num:'09',badge:'critical',badgeLabel:'⚠ Últimos dias',title:'Semana Final — Últimos Dias',timing:'Última semana de novembro',audience:'Todos',objective:'Último alerta antes do encerramento — ação imediata',
+  text:`🔴 *ÚLTIMOS DIAS — PRAZO FINAL: 01/12/2026*
+
+Esta é a última semana para regularizar:
+📄 Documentação
+⚖️ Estágio / NPJ / TCC
+
+*Não haverá prorrogação de prazo.* Se você ainda tem pendências, regularize *hoje.*
+
+Após o prazo, não será possível incluir documentação ou atividades obrigatórias para o semestre 2026.2.
+
+Dúvidas urgentes? Procure a secretaria da unidade imediatamente.`},
+  {num:'10',badge:'critical',badgeLabel:'⚠ Hoje é o prazo',title:'Prazo Final — 01/12/2026',timing:'Dia 01/12/2026',audience:'Todos',objective:'Comunicar o encerramento do prazo — orientar quem ainda não regularizou',
+  text:`🚨 *HOJE É O PRAZO FINAL — 01/12/2026*
+
+Último dia para entrega de:
+📄 Documentação
+🎓 Estágio Supervisionado
+⚖️ NPJ
+📝 TCC (quando aplicável)
+
+*Após hoje, não será mais possível regularizar essas pendências para o semestre 2026.2.*
+
+✅ Se você já regularizou tudo: parabéns! Acompanhe as próximas mensagens do grupo.
+
+⚠️ Se ainda tem pendências: *procure a secretaria agora.*`},
+  {num:'11',badge:'critical',badgeLabel:'⚠ Hoje é o prazo',title:'Prazo Final — AAC Externa — 08/12/2026',timing:'Dia 08/12/2026',audience:'Quem tem AAC externa a regularizar',objective:'Comunicar o encerramento do prazo de solicitação de AAC externa',
+  text:`🚨 *HOJE É O PRAZO FINAL PARA SOLICITAÇÃO DE AAC EXTERNA — 08/12/2026*
+
+Último dia para *solicitar o reconhecimento de Atividades Acadêmicas Complementares externas* referentes ao semestre 2026.2.
+
+📌 Acesse o portal do aluno e realize a solicitação *ainda hoje.*
+
+Após esta data, não será possível incluir novas solicitações de AAC externa para este semestre.
+
+Dúvidas? Entre em contato com a secretaria da unidade.`},
+];
+
+const phase2msgs = [
+  {num:'12',badge:'p2',badgeLabel:'Colação 2027',title:'Início do Processo de Análise de Aptidão',timing:'Início de 2027',audience:'Todos',objective:'Informar que a análise está em andamento e criar expectativas claras',
+  text:`🎓 *INÍCIO DA ANÁLISE DE APTIDÃO PARA A COLAÇÃO DE GRAU*
+
+Estamos iniciando o processo de verificação da situação acadêmica dos prováveis formandos 2026.2.
+
+Nesta etapa, a instituição analisa se todas as exigências do curso foram cumpridas:
+✅ Disciplinas concluídas
+✅ Documentação regularizada
+✅ AAC cumprida
+✅ Estágio / NPJ / TCC (quando aplicável)
+✅ ENADE (quando aplicável)
+
+Em breve, divulgaremos a listagem dos alunos considerados *aptos à colação de grau.*
+
+Fique atento(a) às próximas mensagens!`},
+  {num:'13',badge:'p2',badgeLabel:'Colação 2027',title:'Resultado da Aptidão',timing:'Divulgação da listagem oficial',audience:'Todos',objective:'Informar o resultado e orientar os próximos passos',
+  text:`🎓 *LISTAGEM DE FORMANDOS APTOS À COLAÇÃO DE GRAU — 2026.2*
+
+A lista de alunos aptos à colação de grau referente ao semestre 2026.2 foi divulgada!
+
+📌 [Inserir forma de acesso à lista — portal do aluno, secretaria, etc.]
+
+✅ Se o seu nome *está na lista*: parabéns! Você está apto(a) à colação de grau. Aguarde as próximas orientações sobre a cerimônia.
+
+❌ Se o seu nome *não está na lista* e você acredita que deveria estar: entre em contato com a secretaria da unidade para verificar a sua situação.`},
+  {num:'14',badge:'p2',badgeLabel:'Colação 2027',title:'Colação Institucional — Data e Local',timing:'Após definição oficial das datas',audience:'Alunos aptos',objective:'Divulgar as informações oficiais da cerimônia',
+  text:`🎓 *COLAÇÃO DE GRAU INSTITUCIONAL — FORMANDOS 2026.2*
+
+Temos o prazer de informar os dados da Colação de Grau Institucional:
+
+📅 *Data:* [a confirmar]
+🕐 *Horário:* [a confirmar]
+📍 *Local:* [a confirmar]
+
+A colação institucional é o ato acadêmico oficial de outorga do grau. A presença é *obrigatória* para os alunos que desejam ter o grau outorgado nesta data.
+
+Nas próximas mensagens, você receberá informações sobre o processo de confirmação de presença.`},
+  {num:'15',badge:'p2',badgeLabel:'Colação 2027',title:'Confirmação de Presença',timing:'Após divulgação das datas',audience:'Alunos aptos',objective:'Coletar confirmação de presença dentro do prazo',
+  text:`✅ *CONFIRMAÇÃO DE PRESENÇA — COLAÇÃO DE GRAU*
+
+Alunos aptos à colação de grau, chegou o momento de *confirmar sua presença* na cerimônia!
+
+📅 *Data:* [data da cerimônia]
+🕐 *Horário:* [horário]
+📍 *Local:* [local]
+
+📌 *Como confirmar:* [inserir orientação — formulário, secretaria, portal do aluno]
+
+⚠️ *Prazo para confirmação: [inserir data].*
+
+A confirmação é obrigatória para garantir a sua participação. Não perca o prazo!`},
+  {num:'16',badge:'p2',badgeLabel:'D‑7',title:'Orientações para a Cerimônia',timing:'7 dias antes da cerimônia',audience:'Confirmados',objective:'Passar todas as informações práticas do evento',
+  text:`📋 *ORIENTAÇÕES PARA A COLAÇÃO DE GRAU — FALTAM 7 DIAS!*
+
+Confira tudo o que você precisa saber para o grande dia:
+
+🎓 *Traje:* [inserir traje exigido — toga, traje social, etc.]
+📍 *Endereço completo:* [endereço]
+🕐 *Horário de chegada dos formandos:* [horário — chegar com antecedência]
+🎫 *Convites:* [orientações sobre convites — quantidade, retirada]
+🚗 *Estacionamento:* [informar se disponível e como acessar]
+📸 *Ensaio fotográfico:* [se aplicável — data e horário]
+
+⚠️ *Chegue com antecedência.* A cerimônia tem horário definido e os formandos precisam estar posicionados antes do início.
+
+Qualquer dúvida de última hora, entre em contato com a secretaria da unidade.`},
+  {num:'17',badge:'p2',badgeLabel:'D‑1',title:'É Amanhã!',timing:'Véspera da cerimônia',audience:'Confirmados',objective:'Lembrete final com todas as informações práticas',
+  text:`🎓 *É AMANHÃ! A sua Colação de Grau chegou!* 🎉
+
+📅 *Data:* [data]
+🕐 *Horário dos formandos:* [horário]
+📍 *Local:* [local e endereço completo]
+
+✅ *Checklist final:*
+• Traje separado e pronto
+• Convites entregues aos convidados
+• Local salvo no mapa
+• Planeje chegar com antecedência
+
+*Parabéns pela conquista. Toda a equipe da Estácio Volta Redonda está orgulhosa de cada um de vocês. Até amanhã!* 🎓✨`},
+  {num:'18',badge:null,badgeLabel:'',title:'Encerramento — Pós-Evento',timing:'Após a cerimônia',audience:'Todos',objective:'Encerrar o ciclo com reconhecimento e orientar sobre os próximos passos',
+  text:`💙 *Parabéns, formandos!*
+
+A Cerimônia de Colação de Grau dos formandos 2026.2 foi realizada com sucesso!
+
+Parabenizamos cada um de vocês pela conquista e pela dedicação ao longo de toda a jornada acadêmica. Cada etapa enfrentada e superada ao longo do curso culminou neste momento. Foi uma honra acompanhar essa trajetória.
+
+*Este é apenas o começo de uma nova etapa.*
+
+📩 Seu *diploma digital* será enviado por e-mail em até 60 dias após a data da colação.
+
+Para outros trâmites pós-colação, a secretaria da unidade está à disposição.
+
+Muito obrigado(a) por fazerem parte desta história. 🎓✨`},
+];
+
+document.getElementById('phase1-cards').innerHTML = phase1msgs.map(buildCard).join('');
+document.getElementById('phase2-cards').innerHTML = phase2msgs.map(buildCard).join('');
+
+/* ════════════════════════════════════════════
+   PAINEL DE ALUNOS
+════════════════════════════════════════════ */
+let dbCap = null;
+let dlCap = null;
+const students = new Map();
+const formados = new Map();
+let unsub = null;
+let unsubFormados = null;
+let parsedRows = [];
+let parsedHeaders = [];
+const LS_KEY = 'formandos_2026_2_v3';
+
+const STATUS_STYLE = {
+  pendente:     'background:var(--s-pend-bg);color:var(--s-pend-c)',
+  entregue:     'background:var(--s-entr-bg);color:var(--s-entr-c)',
+  regularizado: 'background:var(--s-reg-bg);color:var(--s-reg-c)',
+  dispensado:   'background:var(--s-disp-bg);color:var(--s-disp-c)',
+  em_analise:   'background:var(--s-anal-bg);color:var(--s-anal-c)',
+  apto:         'background:var(--s-apto-bg);color:var(--s-apto-c)',
+  nao_apto:     'background:var(--s-naoa-bg);color:var(--s-naoa-c)',
+  solicitado:   'background:var(--s-bib-sol-bg);color:var(--s-bib-sol-c)',
+  ok:           'background:var(--s-bib-ok-bg);color:var(--s-bib-ok-c)',
+  confirmado:   'background:var(--s-conf-bg);color:var(--s-conf-c)',
+  nao_participa:'background:var(--s-naop-bg);color:var(--s-naop-c)',
+  '':           'background:var(--s-anal-bg);color:var(--s-anal-c)',
+  sem_processo: 'background:var(--s-pend-bg);color:var(--s-pend-c)',
+  '2.0':        'background:var(--s-entr-bg);color:var(--s-entr-c)',
+  '2.1':        'background:var(--s-disp-bg);color:var(--s-disp-c)',
+  '3.0':        'background:var(--s-reg-bg);color:var(--s-reg-c)',
+};
+
+/* ════════════════════════════════════════════
+   CONEXÃO COM O GOOGLE APPS SCRIPT (armazenamento em Planilha Google)
+   Cole a URL da implantação (termina em /exec) na constante abaixo.
+   Se deixar como está, o painel pergunta a URL no primeiro acesso.
+════════════════════════════════════════════ */
+const GAS_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+const LS_GAS_URL = 'formandos_gas_url';
+const LS_GAS_KEY = 'formandos_gas_key';
+
+const GasDB = (() => {
+  const COLS = ['students', 'formados', 'activity', 'contacts'];
+  const cache = {}, listeners = {};
+  COLS.forEach(c => { cache[c] = new Map(); listeners[c] = []; });
+  let url = '', key = '', since = 0;
+  let queue = [], flushing = false, flushTimer = null, epoch = 0;
+  let polling = false, pollTimer = null, falhas = 0, precisaCompleto = false, ultimoErro = '';
+
+  const clone = o => (o === undefined ? undefined : JSON.parse(JSON.stringify(o)));
+  function igual(a, b) {
+    if (a === b) return true;
+    if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return false;
+    const ka = Object.keys(a), kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    return ka.every(k => igual(a[k], b[k]));
+  }
+  function mesclar(base, patch) {
+    const out = { ...base };
+    Object.keys(patch).forEach(k => {
+      const v = patch[k];
+      if (v && typeof v === 'object' && !Array.isArray(v) && out[k] && typeof out[k] === 'object' && !Array.isArray(out[k])) out[k] = mesclar(out[k], v);
+      else out[k] = clone(v);
+    });
+    return out;
+  }
+
+  /* ── rede ── */
+  async function chamar(corpo) {
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 40000);
+    let r;
+    try {
+      r = await fetch(url, {
+        method: 'POST', redirect: 'follow', signal: ctl.signal,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // evita pré-voo CORS, que o Apps Script não responde
+        body: JSON.stringify({ key, ...corpo }),
+      });
+    } catch (e) {
+      const err = new Error(e.name === 'AbortError' ? 'tempo esgotado' : 'sem resposta do Google'); err.rede = true; throw err;
+    } finally { clearTimeout(to); }
+    let j;
+    try { j = await r.json(); }
+    catch (e) { const err = new Error('resposta inesperada, confira se a implantação está como "Qualquer pessoa"'); err.rede = true; throw err; }
+    if (j && j.error === 'auth') { const err = new Error('chave de acesso incorreta'); err.auth = true; throw err; }
+    return j;
+  }
+
+  /* ── eventos para o painel ── */
+  function emitir(col, mudancas) {
+    if (!mudancas.length) return;
+    const snap = { docChanges: () => mudancas.map(m => ({ type: m.type, doc: { id: m.id, exists: m.type !== 'removed', data: () => clone(m.data) } })) };
+    listeners[col].forEach(l => { try { l.cb(snap); } catch (e) { console.error('[snapshot]', e); } });
+  }
+  function aplicarRemoto(col, docs, completo) {
+    const mud = [];
+    const m = cache[col];
+    const vistos = new Set();
+    (docs || []).forEach(d => {
+      vistos.add(d.id);
+      if (d.del) { if (m.has(d.id)) { m.delete(d.id); mud.push({ type: 'removed', id: d.id }); } return; }
+      if (m.has(d.id)) {
+        if (!igual(m.get(d.id), d.data)) { m.set(d.id, clone(d.data)); mud.push({ type: 'modified', id: d.id, data: d.data }); }
+      } else { m.set(d.id, clone(d.data)); mud.push({ type: 'added', id: d.id, data: d.data }); }
+    });
+    if (completo) [...m.keys()].forEach(id => { if (!vistos.has(id)) { m.delete(id); mud.push({ type: 'removed', id }); } });
+    emitir(col, mud);
+  }
+
+  /* ── escrita: aplica na hora e envia em lotes ── */
+  function enfileirar(op) {
+    epoch++;
+    return new Promise((resolve, reject) => { queue.push({ op, resolve, reject }); agendarEnvio(); });
+  }
+  function agendarEnvio() { if (!flushTimer && !flushing) flushTimer = setTimeout(enviar, 40); }
+  async function enviarLote(ops) {
+    const esperas = [800, 2500, 6000];
+    for (let t = 0; ; t++) {
+      try {
+        const r = await chamar({ ops });
+        if (r.ok) return r;
+        const err = new Error(r.error || 'erro ao gravar'); err.servidor = true; throw err;
+      } catch (e) {
+        if (e.auth) { const ok = await GasDB._reautenticar(); if (ok) continue; throw e; }
+        if (e.servidor || t >= esperas.length) throw e;
+        await new Promise(res => setTimeout(res, esperas[t]));
+      }
+    }
+  }
+  async function enviar() {
+    flushTimer = null;
+    if (flushing) return;
+    flushing = true; atualizarRotulo();
+    try {
+      while (queue.length) {
+        const lote = queue.splice(0, 150);
+        try {
+          const r = await enviarLote(lote.map(x => x.op));
+          lote.forEach(x => x.resolve(r));
+        } catch (e) {
+          console.error('[gravar]', e);
+          lote.forEach(x => x.reject(e));
+          precisaCompleto = true;
+        }
+      }
+    } finally {
+      flushing = false; atualizarRotulo();
+      if (queue.length) agendarEnvio(); else setTimeout(sondar, 600);
+    }
+  }
+  function atualizarRotulo() {
+    if (flushing || queue.length) setSyncLabel('local', 'Salvando…');
+    else setSyncLabel(falhas >= 2 ? 'local' : 'live', falhas >= 2 ? 'Sem conexão, tentando de novo' : 'Ao vivo');
+  }
+  window.addEventListener('beforeunload', e => { if (flushing || queue.length) { e.preventDefault(); e.returnValue = ''; } });
+
+  /* ── sincronização (consulta leve a cada poucos segundos) ── */
+  async function sondar() {
+    if (polling) return;
+    if (flushing || queue.length) return;
+    polling = true;
+    const ep = epoch;
+    try {
+      const r = await chamar({ action: 'poll', since: precisaCompleto ? 0 : since });
+      if (!r.ok) throw new Error(r.error || 'erro');
+      if (ep !== epoch || flushing || queue.length) return;   // houve gravação no meio: descarta e repete
+      if (r.v < since) { since = 0; setTimeout(sondar, 200); return; }   // planilha foi reiniciada
+      if (r.changed) COLS.forEach(c => aplicarRemoto(c, (r.docs || {})[c], !!r.full));
+      since = Math.max(since, r.v);
+      precisaCompleto = false;
+      if (falhas) { falhas = 0; }
+    } catch (e) {
+      falhas++;
+      if (e.auth) { const ok = await GasDB._reautenticar(); if (ok) falhas = 0; }
+    } finally { polling = false; atualizarRotulo(); }
+  }
+  function agendarSondagem() {
+    clearTimeout(pollTimer);
+    const base = document.hidden ? 30000 : 8000;
+    pollTimer = setTimeout(async () => { await sondar(); agendarSondagem(); }, base + Math.random() * 1500);
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && since) sondar(); });
+  window.addEventListener('focus', () => { if (since) sondar(); });
+  window.addEventListener('online', () => { if (since) sondar(); });
+
+  /* ── API compatível com o painel ── */
+  const api = {
+    collection(nome) {
+      return {
+        onSnapshot(cb, errCb) {
+          const l = { cb, errCb }; listeners[nome].push(l);
+          setTimeout(() => {
+            const todos = [...cache[nome].entries()].map(([id, data]) => ({ type: 'added', id, data }));
+            const snap = { docChanges: () => todos.map(m => ({ type: m.type, doc: { id: m.id, exists: true, data: () => clone(m.data) } })) };
+            try { cb(snap); } catch (e) { console.error('[snapshot inicial]', e); }
+          }, 0);
+          return () => { listeners[nome] = listeners[nome].filter(x => x !== l); };
+        },
+        async get() { return { docs: [...cache[nome].entries()].map(([id, data]) => ({ id, data: () => clone(data) })) }; },
+      };
+    },
+    doc(caminho) {
+      const i = caminho.indexOf('/'); const col = caminho.slice(0, i), id = caminho.slice(i + 1);
+      const local = COLS.includes(col);
+      return {
+        async get() {
+          if (local) { const d = cache[col].get(id); return { exists: !!d, data: () => clone(d) }; }
+          const r = await chamar({ action: 'get', col, id });
+          if (!r.ok) throw new Error(r.error || 'erro ao ler');
+          return { exists: !!r.exists, data: () => r.data };
+        },
+        set(data) {
+          if (local) {
+            const antes = cache[col].get(id);
+            cache[col].set(id, clone(data));
+            emitir(col, [{ type: antes ? 'modified' : 'added', id, data }]);
+          }
+          return enfileirar({ op: 'set', col, id, data: clone(data) });
+        },
+        update(patch) {
+          if (local) {
+            const antes = cache[col].get(id);
+            if (antes) { const novo = mesclar(antes, patch); cache[col].set(id, novo); emitir(col, [{ type: 'modified', id, data: novo }]); }
+          }
+          return enfileirar({ op: 'update', col, id, data: clone(patch) });
+        },
+        delete() {
+          if (local && cache[col].has(id)) { cache[col].delete(id); emitir(col, [{ type: 'removed', id }]); }
+          return enfileirar({ op: 'delete', col, id });
+        },
+      };
+    },
+  };
+
+  /* ── credenciais ── */
+  let pedido = null;
+  function pedirCredenciais({ precisaUrl, aviso }) {
+    return new Promise(resolve => {
+      pedido = resolve;
+      document.getElementById('gas-url-row').hidden = !precisaUrl;
+      document.getElementById('gas-url').value = url || '';
+      document.getElementById('gas-key').value = '';
+      const av = document.getElementById('gas-aviso'); av.textContent = aviso || ''; av.hidden = !aviso;
+      document.getElementById('gas-modal').hidden = false;
+      setTimeout(() => document.getElementById(precisaUrl && !url ? 'gas-url' : 'gas-key').focus(), 60);
+    });
+  }
+  window.enviarCredenciais = function () {
+    const u = document.getElementById('gas-url').value.trim(), k = document.getElementById('gas-key').value.trim();
+    if (!k || (!document.getElementById('gas-url-row').hidden && !/^(https:\/\/script\.google\.com\/|http:\/\/localhost(:\d+)?\/).*exec/.test(u))) {
+      const av = document.getElementById('gas-aviso'); av.textContent = !k ? 'Digite a chave de acesso.' : 'A URL deve começar com https://script.google.com e terminar em /exec.'; av.hidden = false; return;
+    }
+    document.getElementById('gas-modal').hidden = true;
+    const r = pedido; pedido = null; if (r) r({ url: u, key: k });
+  };
+
+  const urlFixa = () => GAS_URL && !/COLE_AQUI/.test(GAS_URL);
+  return {
+    ultimoErro: () => ultimoErro,
+    async _reautenticar() {
+      localStorage.removeItem(LS_GAS_KEY);
+      const c = await pedirCredenciais({ precisaUrl: false, aviso: 'A chave de acesso mudou ou está incorreta. Digite novamente.' });
+      key = c.key; localStorage.setItem(LS_GAS_KEY, key); return true;
+    },
+    async conectar() {
+      url = urlFixa() ? GAS_URL : (localStorage.getItem(LS_GAS_URL) || '');
+      key = localStorage.getItem(LS_GAS_KEY) || '';
+      let aviso = '';
+      for (;;) {
+        if (!url || !key) {
+          const c = await pedirCredenciais({ precisaUrl: !urlFixa(), aviso });
+          if (c.url) url = c.url; key = c.key; aviso = '';
+        }
+        try {
+          setSyncLabel('local', 'Conectando…');
+          const r = await chamar({ action: 'poll', since: 0 });
+          if (!r.ok) throw new Error(r.error || 'erro no servidor');
+          COLS.forEach(c => aplicarRemoto(c, (r.docs || {})[c], true));
+          since = r.v;
+          try { localStorage.setItem(LS_GAS_KEY, key); if (!urlFixa()) localStorage.setItem(LS_GAS_URL, url); } catch (e) {}
+          agendarSondagem();
+          return api;
+        } catch (e) {
+          if (e.auth) { key = ''; try { localStorage.removeItem(LS_GAS_KEY); } catch (x) {} aviso = 'Chave de acesso incorreta.'; continue; }
+          ultimoErro = e.message;
+          if (urlFixa() && localStorage.getItem(LS_GAS_KEY)) return null;
+          if (urlFixa()) return null;
+          url = ''; aviso = 'Não consegui conectar: ' + e.message + '. Confira a URL.'; try { localStorage.removeItem(LS_GAS_URL); } catch (x) {}
+        }
+      }
+    },
+  };
+})();
+
+(async () => {
+  setSyncLabel('local','Conectando…');
+  dbCap = await GasDB.conectar();
+  dlCap = null;
+
+  if (dbCap) {
+    setSyncLabel('live','Ao vivo');
+    unsub = dbCap.collection('students').onSnapshot(snap => {
+      snap.docChanges().forEach(ch => {
+        if (ch.type === 'removed') students.delete(ch.doc.id);
+        else if (ch.doc.exists) students.set(ch.doc.id, ch.doc.data());
+      });
+      renderAll();
+      refreshDrawer(false);
+    }, err => { console.error('[db]',err); setSyncLabel('local','Sem conexão'); });
+    subscribeActivity();
+    subscribeFormados();
+    subscribeContacts();
+  } else {
+    setSyncLabel('local','Sem conexão');
+    const bn = document.createElement('div');
+    bn.className = 'local-banner';
+    bn.innerHTML = '<strong>Não foi possível conectar ao Google Planilhas.</strong> ' + esc(GasDB.ultimoErro() || 'Verifique a internet.') + ' <button class="link-btn" onclick="location.reload()">Tentar de novo</button>';
+    document.querySelector('.tab-nav').after(bn);
+  }
+  initUser();
+  initSem();
+  carregarSemestreCompartilhado();
+})();
+
+function setSyncLabel(type, text) {
+  const el = document.getElementById('sync-label');
+  el.className = `sync-label sync-${type}`;
+  document.getElementById('sync-text').textContent = text;
+}
+
+/* ── RENDER ── */
+function activeStudents(){ return [...students.values()].filter(s => !s.arq); }
+function renderAll() { updateStats(); updateFilters(); renderTable(); }
+
+function updateStats() {
+  const all = activeStudents();
+  setText('s-total',    all.length);
+  setText('s-doc-pend', all.filter(s => s.doc === 'pendente').length);
+  setText('s-aac-pend', all.filter(s => s.aac === 'pendente').length);
+  setText('s-aptos',    all.filter(s => s.apt === 'apto').length);
+  setText('s-naoaptos', all.filter(s => s.apt === 'nao_apto').length);
+  setText('s-analise',  all.filter(s => s.apt === 'em_analise').length);
+  setText('s-bib-pend', all.filter(s => (s.bib || 'pendente') === 'pendente').length);
+  setText('s-semcont',  all.filter(s => s.apt !== 'apto' && (!lastContactOf(s) || daysSince(lastContactOf(s)) > 7)).length);
+  const hoje = todayStr();
+  setText('s-prazo',    all.filter(s => s.nextStep && s.nextDue && s.nextDue < hoje).length);
+}
+
+function updateFilters() {
+  const vals = activeStudents();
+
+  const cursoSel = document.getElementById('f-curso');
+  const curCurso = cursoSel.value;
+  const cursos = [...new Set(vals.map(s => s.curso||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  cursoSel.innerHTML = '<option value="all">Todos os cursos</option>' +
+    cursos.map(c=>`<option value="${esc(c)}" ${c===curCurso?'selected':''}>${esc(c)}</option>`).join('');
+
+  const turnoSel = document.getElementById('f-turno');
+  const curTurno = turnoSel.value;
+  const turnos = [...new Set(vals.map(s => s.turno||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  turnoSel.innerHTML = '<option value="all">Todos os turnos</option>' +
+    turnos.map(t=>`<option value="${esc(t)}" ${t===curTurno?'selected':''}>${esc(t)}</option>`).join('');
+
+  const respSel = document.getElementById('f-resp');
+  const curResp = respSel.value;
+  const resps = [...new Set(vals.map(s => s.resp||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  respSel.innerHTML = '<option value="all">Responsável: Todos</option><option value="__none" '+(curResp==='__none'?'selected':'')+'>Sem responsável</option>' +
+    resps.map(r=>`<option value="${esc(r)}" ${r===curResp?'selected':''}>${esc(r)}</option>`).join('');
+}
+
+function getFiltered() {
+  const q     = (document.getElementById('f-search').value||'').toLowerCase();
+  const turno = document.getElementById('f-turno').value;
+  const curso = document.getElementById('f-curso').value;
+  const doc   = document.getElementById('f-doc').value;
+  const aac   = document.getElementById('f-aac').value;
+  const apt   = document.getElementById('f-apt').value;
+  const bib   = document.getElementById('f-bib').value;
+  const etapa = document.getElementById('f-etapa').value;
+  const resp  = document.getElementById('f-resp').value;
+  const acomp = document.getElementById('f-acomp').value;
+  const hoje  = todayStr();
+  const em7   = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+
+  const base  = document.getElementById('f-base').value;
+  return [...students.values()].filter(s => {
+    if (base === 'ativos' && s.arq) return false;
+    if (base === 'arq' && !s.arq) return false;
+    if (q && !((s.nome||'').toLowerCase().includes(q)||(s.mat||'').includes(q)||(s.fantasia||'').toLowerCase().includes(q))) return false;
+    if (turno !== 'all' && s.turno !== turno) return false;
+    if (curso !== 'all' && s.curso !== curso) return false;
+    if (doc   !== 'all' && s.doc   !== doc)   return false;
+    if (aac   !== 'all' && s.aac   !== aac)   return false;
+    if (apt   !== 'all' && s.apt   !== apt)   return false;
+    if (bib   !== 'all' && (s.bib||'pendente') !== bib) return false;
+    if (etapa !== 'all' && (s.etapa||'') !== etapa) return false;
+    if (resp === '__none' && s.resp) return false;
+    if (resp !== 'all' && resp !== '__none' && s.resp !== resp) return false;
+    if (acomp !== 'all') {
+      const lc = lastContactOf(s);
+      if (acomp==='semcont' && !(s.apt!=='apto' && (!lc || daysSince(lc)>7))) return false;
+      if (acomp==='nunca'   && lc) return false;
+      if (acomp==='vencido' && !(s.nextStep && s.nextDue && s.nextDue < hoje)) return false;
+      if (acomp==='semana'  && !(s.nextStep && s.nextDue && s.nextDue >= hoje && s.nextDue <= em7)) return false;
+      if (acomp==='urgente' && rowLevel(s)!=='danger') return false;
+    }
+    return true;
+  }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+}
+
+function applyFilters() { renderTable(); }
+
+function renderTable() {
+  const filtered = getFiltered();
+  const tbody = document.getElementById('student-tbody');
+  document.getElementById('filter-count').textContent =
+    students.size > 0 ? `${filtered.length} de ${activeStudents().length} aluno${activeStudents().length!==1?'s':''} ativos` + (students.size>activeStudents().length ? `, ${students.size-activeStudents().length} arquivados` : '') : '';
+
+  if (students.size === 0) {
+    tbody.innerHTML = `<tr><td colspan="15" class="empty-state"><p>Nenhum aluno cadastrado ainda.</p><p>Clique em <strong>+ Importar alunos</strong> para começar.</p></td></tr>`;
+    return;
+  }
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="15" class="empty-state"><p>Nenhum aluno corresponde ao filtro aplicado.</p></td></tr>`;
+    return;
+  }
+
+  const dash = '<span style="color:var(--faint)">—</span>';
+  tbody.innerHTML = filtered.map(s => {
+    const id = s.id;
+    const na = nextAction(s);
+    const lvl = rowLevel(s);
+    const lc = lastContactOf(s);
+    const d = daysSince(lc);
+    const lcTxt = !lc ? 'Nunca' : d===0 ? 'Hoje' : d===1 ? 'Ontem' : `há ${d} dias`;
+    const lcCls = !lc ? 'never' : (d>7 && s.apt!=='apto') ? 'late' : '';
+    return `<tr>
+      <td class="td-nome"><button class="name-btn" onclick="openDrawer('${esc(id)}')" title="Abrir ficha de ${esc(s.nome||'')}"><span class="lvl-dot lvl-${lvl}"></span><span class="nb-txt">${esc(s.nome||'')}</span></button></td>
+      <td class="td-mat">${esc(s.mat||'')}</td>
+      <td class="td-next" title="${esc(na.text)}"><span>${esc(na.text)}</span></td>
+      <td class="td-curso" title="${esc(s.curso||'')}">${esc(s.curso||'')}</td>
+      <td class="td-fantasia" title="${esc(s.fantasia||'')}">${esc(s.fantasia||'') || dash}</td>
+      <td class="td-turno">${esc(s.turno||'') || dash}</td>
+      <td class="td-ingresso" title="${esc(s.ingresso||'')}">${esc(s.ingresso||'') || dash}</td>
+      <td>${makeSelect(id,'etapa',s.etapa||'',ETAPA_OPTS)}</td>
+      <td>${makeSelect(id,'doc',s.doc||'pendente',[['pendente','Pendente'],['entregue','Entregue'],['regularizado','Regularizado']])}</td>
+      <td>${makeSelect(id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}</td>
+      <td>${makeSelect(id,'apt',s.apt||'em_analise',[['em_analise','Em análise'],['apto','Apto'],['nao_apto','Não apto']])}</td>
+      <td>${makeSelect(id,'bib',s.bib||'pendente',[['pendente','Pendente'],['solicitado','Solicitado'],['ok','OK']],'students')}</td>
+      <td class="td-resp">${esc(s.resp||'') || dash}</td>
+      <td class="td-contact ${lcCls}" title="${lc?fmtDateTime(lc):'Nenhum contato registrado'}">${lcTxt}</td>
+      <td class="td-obs">${lastRegHTML(s)}<span class="obs-span" onclick="editObs(this,'${esc(id)}','students')" title="Clique para editar a observação fixa">${s.obs ? esc(s.obs) : (lastContactItem.has(id) ? '' : '<span class="obs-empty">—</span>')}</span></td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.st-select').forEach(styleSelect);
+}
+
+function makeSelect(id, field, value, options, col='students') {
+  const opts = options.map(([v,l])=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(l)}</option>`).join('');
+  return `<select class="st-select" data-id="${esc(id)}" data-field="${field}" data-col="${col}" onchange="onStatusChange(this)">${opts}</select>`;
+}
+function styleSelect(sel) { sel.setAttribute('style', STATUS_STYLE[sel.value]||''); }
+
+/* ── STATUS UPDATE ── */
+async function onStatusChange(sel) {
+  const id = sel.dataset.id, field = sel.dataset.field, val = sel.value;
+  const col = sel.dataset.col || 'students';
+  const map = col === 'formados' ? formados : students;
+  const s = map.get(id);
+  const prev = s?.[field] ?? '';
+  if (!requireUser()) { sel.value = prev; styleSelect(sel); return; }
+  styleSelect(sel);
+  const sname = s?.nome || id;
+  if (s) { s[field] = val; s.upd = Date.now(); }
+  showToast('Salvo');
+  if (dbCap) {
+    try {
+      await dbCap.doc(`${col}/${id}`).update({[field]:val, upd:Date.now()});
+    } catch(e) { console.error('[update]',e); showToast('Erro ao salvar'); return; }
+  } else if (col === 'students') { saveLS(); }
+  if (prev !== val) logActivity(id, sname, field, prev, val, col);
+  if (col === 'students') { updateStats(); renderTable(); refreshDrawer(true); }
+  else updateFormadosStats();
+}
+
+function editObs(span, id, col='students') {
+  if (!requireUser()) return;
+  const map = col === 'formados' ? formados : students;
+  const s = map.get(id);
+  const cur = s?.obs || '';
+  const input = document.createElement('input');
+  input.type = 'text'; input.value = cur; input.className = 'obs-input';
+  span.replaceWith(input); input.focus();
+  const save = async () => {
+    const val = input.value.trim();
+    if (s) s.obs = val;
+    const ns = document.createElement('span');
+    ns.className = 'obs-span'; ns.onclick = () => editObs(ns, id, col);
+    ns.innerHTML = val ? esc(val) : '<span class="obs-empty">—</span>';
+    input.replaceWith(ns);
+    if (val !== cur) {
+      if (dbCap) {
+        try {
+          await dbCap.doc(`${col}/${id}`).update({obs:val, upd:Date.now()});
+        } catch(e){}
+      } else if (col === 'students') saveLS();
+      logActivity(id, s?.nome || id, 'obs', cur, val, col);
+    }
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = cur; input.blur(); }
+  });
+}
+
+/* ── FILE IMPORT ── */
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) loadFile(file);
+  e.target.value = '';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.add('drag-over');
+}
+function onDragLeave(e) {
+  document.getElementById('file-drop').classList.remove('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+}
+
+async function restaurarBackup(file) {
+  if (!requireUser()) return;
+  let bk;
+  try { bk = JSON.parse(await file.text()); } catch (e) { impErr('Arquivo .json inválido.'); return; }
+  if (!bk || bk.formato !== 'formandos-backup-v1') { impErr('Este .json não é um backup do painel.'); return; }
+  const cols = ['students','formados','activity','contacts'];
+  const total = cols.reduce((n,c) => n + (bk[c]||[]).length, 0);
+  if (!total) { impErr('O backup está vazio.'); return; }
+  const resumo = cols.map(c => `${(bk[c]||[]).length} ${({students:'alunos',formados:'formados',activity:'atividades',contacts:'contatos'})[c]}`).join(', ');
+  if (!confirm(`Restaurar backup com ${resumo}?\n\nRegistros com a mesma matrícula serão substituídos pelos do backup.`)) return;
+  showStep(3);
+  const fill = document.getElementById('progress-fill'), label = document.getElementById('progress-label');
+  let feito = 0;
+  try {
+    for (const c of cols) {
+      const docs = bk[c] || [];
+      for (let i = 0; i < docs.length; i += 100) {
+        const lote = docs.slice(i, i + 100);
+        await Promise.all(lote.map(d => dbCap.doc(`${c}/${d.id}`).set(d.data)));
+        feito += lote.length;
+        fill.style.width = Math.round(feito / total * 100) + '%';
+        label.textContent = `Restaurando… ${feito} / ${total}`;
+      }
+    }
+  } catch (e) { console.error('[restaurar]', e); showStep(1); impErr('Falha ao gravar no Google. Nada foi perdido, tente de novo.'); return; }
+  logActivity('', 'Backup', 'import', '', `backup restaurado: ${resumo}`, 'students', currentUser || 'Equipe');
+  document.getElementById('success-msg').textContent = `Backup restaurado: ${resumo}.`;
+  showStep(4);
+}
+
+function loadFile(file) {
+  const nameEl = document.getElementById('file-drop-name');
+  nameEl.textContent = '📄 ' + file.name;
+  nameEl.hidden = false;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'json') { restaurarBackup(file); return; }
+  if (ext === 'xlsx' || ext === 'xls') {
+    readXlsx(file);
+  } else {
+    readText(file);
+  }
+}
+
+let loadedGrid = null;   // linhas já lidas do XLSX (sem passar por texto)
+
+function impErr(msg){ const e=document.getElementById('imp-err'); if(!e) return; e.textContent=msg||''; e.hidden=!msg; }
+
+function readText(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const buf = new Uint8Array(e.target.result);
+    let txt = new TextDecoder('utf-8').decode(buf);
+    // arquivo salvo pelo Excel em ANSI: acentos viram o caractere de substituição; relê como Windows-1252
+    if (txt.includes('\uFFFD')) txt = new TextDecoder('windows-1252').decode(buf);
+    loadedGrid = null;
+    document.getElementById('csv-input').value = txt;
+    analyzeCSV();
+  };
+  reader.onerror = () => impErr('Erro ao ler o arquivo. Tente copiar e colar o conteúdo da planilha.');
+  reader.readAsArrayBuffer(file);
+}
+
+/* célula -> texto limpo; números inteiros grandes (matrícula) sem notação científica */
+function cellTxt(v){
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'number') return Number.isInteger(v) ? v.toFixed(0) : String(v);
+  if (v instanceof Date) return isNaN(v) ? '' : v.toLocaleDateString('pt-BR');
+  let t = String(v).replace(/\u00a0/g,' ').replace(/\r/g,'').trim();
+  const m = t.match(/^="(.*)"$/); if (m) t = m[1];
+  return t;
+}
+
+function readXlsx(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:false});
+      // usa a primeira aba que tiver dados
+      let grid = [];
+      for (const name of wb.SheetNames) {
+        const ws = wb.Sheets[name];
+        if (ws && ws['!ref']) {
+          // corrige dimensão errada gravada por alguns sistemas
+          const keys = Object.keys(ws).filter(k => k[0] !== '!');
+          if (keys.length) {
+            const rng = XLSX.utils.decode_range(ws['!ref']);
+            keys.forEach(k => { const c = XLSX.utils.decode_cell(k); if (c.r>rng.e.r) rng.e.r=c.r; if (c.c>rng.e.c) rng.e.c=c.c; });
+            ws['!ref'] = XLSX.utils.encode_range(rng);
+          }
+        }
+        grid = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:'', blankrows:false});
+        if (grid.length > 1) break;
+      }
+      loadedGrid = grid.map(r => r.map(cellTxt));
+      document.getElementById('csv-input').value = '';
+      document.getElementById('csv-input').placeholder = `Arquivo carregado: ${file.name} (${Math.max(loadedGrid.length-1,0)} linhas)`;
+      analyzeCSV();
+    } catch(err) {
+      console.error('[xlsx]', err);
+      impErr('Não foi possível ler o arquivo XLSX. Salve como CSV no Excel e importe de novo.');
+    }
+  };
+  reader.onerror = () => impErr('Erro ao ler o arquivo.');
+  reader.readAsArrayBuffer(file);
+}
+
+/* CSV/TSV completo: aspas, aspas duplas e quebras de linha dentro de células */
+function parseDelimited(text, sep) {
+  const rows=[]; let row=[], cur='', inQ=false;
+  for (let i=0;i<text.length;i++) {
+    const c=text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i+1] === '"') { cur+='"'; i++; } else inQ=false; }
+      else cur+=c;
+    } else if (c === '"' && cur === '') inQ=true;
+    else if (c === sep) { row.push(cur); cur=''; }
+    else if (c === '\n') { row.push(cur); rows.push(row); row=[]; cur=''; }
+    else if (c !== '\r') cur+=c;
+  }
+  row.push(cur); rows.push(row);
+  return rows.map(r => r.map(cellTxt)).filter(r => r.some(v => v));
+}
+
+/* acha a linha de cabeçalho (exportações com título nas primeiras linhas) */
+function findHeaderRow(grid){
+  const re = /matric|nom_aluno|nome|aluno|curso/i;
+  for (let i=0;i<Math.min(grid.length,15);i++) {
+    const r = grid[i]; const filled = r.filter(v=>v).length;
+    if (filled >= 2 && r.some(v => re.test(v))) return i;
+  }
+  return 0;
+}
+
+/* ── IMPORT ── */
+let importTarget = 'students'; // 'students' | 'formados'
+
+function openImportAlunos() { importTarget='students'; openImport(); }
+function openImportFormados() { importTarget='formados'; openImport(); }
+
+function openImport() {
+  if (!requireUser()) return;
+  showStep(1);
+  document.getElementById('csv-input').value='';
+  document.getElementById('csv-input').placeholder='Cole aqui o conteúdo do CSV ou planilha copiada…';
+  loadedGrid = null; impErr('');
+  document.getElementById('btn-do-import').disabled = false;
+  document.getElementById('file-drop-name').hidden=true;
+  // Mostra/esconde campos específicos de alunos
+  document.querySelectorAll('.map-alunos-only').forEach(el => { el.hidden = importTarget !== 'students'; });
+  document.getElementById('import-modal').querySelector('h2').textContent =
+    importTarget === 'formados' ? 'Importar Formados' : 'Importar Alunos';
+  document.getElementById('import-modal').hidden=false;
+}
+function closeImport() { document.getElementById('import-modal').hidden=true; }
+function backStep1() {
+  showStep(1);
+  document.querySelectorAll('.map-alunos-only').forEach(el => { el.hidden = importTarget !== 'students'; });
+}
+
+function showStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById(`imp-${i}`).hidden = i!==n;
+    const f = document.getElementById(`imp-${i}-foot`);
+    if (f) f.hidden = i!==n;
+  });
+}
+
+function analyzeCSV() {
+  impErr('');
+  let grid;
+  if (loadedGrid) grid = loadedGrid;
+  else {
+    let raw = document.getElementById('csv-input').value;
+    if (raw.charCodeAt(0)===0xFEFF) raw = raw.slice(1);
+    if (!raw.trim()) { impErr('Selecione um arquivo ou cole o conteúdo da planilha antes de continuar.'); return; }
+    const first = raw.split('\n').find(l => l.trim()) || '';
+    const semis  = (first.match(/;/g)||[]).length;
+    const commas = (first.match(/,/g)||[]).length;
+    const tabs   = (first.match(/\t/g)||[]).length;
+    const sep = tabs>0&&tabs>=semis&&tabs>=commas ? '\t' : semis>=commas ? ';' : ',';
+    grid = parseDelimited(raw, sep);
+  }
+  if (!grid || grid.length < 2) { impErr('Não foi possível ler linhas de alunos no arquivo. Confira se a primeira aba tem o cabeçalho e os dados.'); return; }
+
+  const h0 = findHeaderRow(grid);
+  const seen = {};
+  parsedHeaders = grid[h0].map((h,i) => {
+    let name = cellTxt(h) || `Coluna ${i+1}`;
+    if (seen[name]) { seen[name]++; name = `${name} (${seen[name]})`; } else seen[name] = 1;
+    return name;
+  });
+  parsedRows = grid.slice(h0+1).map(vals => {
+    const obj = {};
+    parsedHeaders.forEach((h,i) => { obj[h] = cellTxt(vals[i]); });
+    return obj;
+  }).filter(r => Object.values(r).some(v=>v));
+
+  if (parsedRows.length===0) { impErr('O arquivo tem cabeçalho, mas nenhuma linha de aluno abaixo dele.'); return; }
+
+  const none = '<option value="">— não mapear —</option>';
+  const opts = none + parsedHeaders.map(h=>`<option value="${esc(h)}">${esc(h)}</option>`).join('');
+  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib'].forEach(id => {
+    document.getElementById(id).innerHTML = opts;
+  });
+
+  const lower = parsedHeaders.map(h => h.toLowerCase().trim());
+
+  // Auto-detecção inteligente: tenta match exato primeiro, depois parcial (mais longo vence)
+  function autoDetect(...cands) {
+    // 1. match exato (nome de coluna = candidato)
+    for (const c of cands) {
+      const i = lower.indexOf(c.toLowerCase());
+      if (i >= 0) return parsedHeaders[i];
+    }
+    // 2. match parcial — candidatos mais longos têm prioridade (evita falsos positivos)
+    const byLen = [...cands].sort((a, b) => b.length - a.length);
+    for (const c of byLen) {
+      const cl = c.toLowerCase();
+      const i = lower.findIndex(h => h.includes(cl));
+      if (i >= 0) return parsedHeaders[i];
+    }
+    return '';
+  }
+
+  document.getElementById('map-nome').value       = autoDetect('nom_aluno','nome_aluno','nom_social','aluno');
+  document.getElementById('map-mat').value        = autoDetect('cod_matricula','num_matricula','matricula');
+  document.getElementById('map-curso').value      = autoDetect('nom_curso','nome_curso','curso');
+  document.getElementById('map-fantasia').value   = autoDetect('nom_fantasia','nome_fantasia','fantasia');
+  document.getElementById('map-turno').value      = autoDetect('nom_turno','nome_turno','turno');
+  document.getElementById('map-ingresso').value   = autoDetect('nom_forma_ingresso','forma_ingresso','ingresso');
+  document.getElementById('map-doc-status').value = autoDetect('docs','situacao colacao','sit_colacao','sit_doc','doc_status','situacao_doc');
+  document.getElementById('map-bib').value        = autoDetect('biblioteca','nada consta','nada_consta','bib');
+  document.getElementById('map-etapa').value      = autoDetect('situacoes colacao','situacao colacao','situacoes_colacao','situacao_colacao','sit_colacao','etapa');
+
+  updatePreview();
+  showStep(2);
+
+  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib'].forEach(id => {
+    document.getElementById(id).addEventListener('change', updatePreview);
+  });
+}
+
+function parseLine(line, sep) {
+  const res=[]; let cur='', inQ=false;
+  for (let i=0;i<line.length;i++) {
+    const c=line[i];
+    if (c==='"') { inQ=!inQ; }
+    else if (c===sep&&!inQ) { res.push(cur); cur=''; }
+    else { cur+=c; }
+  }
+  res.push(cur); return res;
+}
+
+function updatePreview() {
+  const nm = document.getElementById('map-nome').value;
+  const mm = document.getElementById('map-mat').value;
+  const mc = document.getElementById('map-curso').value;
+  const mf = document.getElementById('map-fantasia').value;
+  const mt = document.getElementById('map-turno').value;
+  const mi = document.getElementById('map-ingresso').value;
+
+  const rows = parsedRows.slice(0,5).map(r=>`<tr>
+    <td>${esc(nm?r[nm]||'':'—')}</td>
+    <td>${esc(mm?r[mm]||'':'—')}</td>
+    <td>${esc(mc?r[mc]||'':'—')}</td>
+    <td>${esc(mf?r[mf]||'':'—')}</td>
+    <td>${esc(mt?r[mt]||'':'—')}</td>
+    <td>${esc(mi?r[mi]||'':'—')}</td>
+  </tr>`).join('');
+
+  document.getElementById('import-preview').innerHTML = `
+    <table class="preview-table">
+      <thead><tr><th>Nome</th><th>Matrícula</th><th>Curso</th><th>Fantasia</th><th>Turno</th><th>Ingresso</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  const count = parsedRows.filter(r=>mm&&nm&&r[mm]&&r[nm]).length;
+  const sync = document.getElementById('imp-sync');
+  if (importTarget === 'students' && mm && count > 0) {
+    const ids = new Set(parsedRows.filter(r=>r[mm]&&r[nm]).map(r=>sanitizeId(r[mm])));
+    const fora = activeStudents().filter(s => !ids.has(s.id)).length;
+    sync.hidden = fora === 0;
+    document.getElementById('imp-sync-txt').innerHTML = `<strong>Usar este arquivo como a base atual.</strong> ${fora} aluno${fora!==1?'s':''} que est${fora!==1?'ão':'á'} no painel e não aparece${fora!==1?'m':''} no arquivo ser${fora!==1?'ão':'á'} arquivado${fora!==1?'s':''}. Eles saem da lista, mas status, contatos e histórico ficam guardados e voltam se o aluno aparecer numa próxima importação.`;
+  } else sync.hidden = true;
+  const btn = document.getElementById('btn-do-import');
+  btn.textContent = `Importar ${count} aluno${count!==1?'s':''}`;
+  btn.disabled = count === 0;
+  btn.style.opacity = count === 0 ? '.5' : '';
+
+  const warn = document.getElementById('import-warning');
+  const noun = importTarget === 'formados' ? formados : students;
+  if (!nm || !mm) {
+    warn.hidden=false; warn.textContent='Escolha as colunas de Nome e Matrícula para continuar.';
+  } else if (count === 0) {
+    const semMat = parsedRows.filter(r=>!r[mm]).length, semNome = parsedRows.filter(r=>!r[nm]).length;
+    const amostra = parsedRows.slice(0,3).map(r => `"${r[mm]||''}"`).join(', ');
+    warn.hidden=false;
+    warn.textContent = `Nenhuma das ${parsedRows.length} linhas tem Nome e Matrícula preenchidos (${semMat} sem matrícula, ${semNome} sem nome). ` +
+      `Valores lidos na coluna ${mm}: ${amostra}. Confira se escolheu a coluna certa ou se há outra coluna parecida na lista.`;
+  } else {
+    const existing = parsedRows.filter(r=>r[mm]&&noun.has(sanitizeId(r[mm]))).length;
+    const ignorados = parsedRows.length - count;
+    const msgs = [];
+    if (existing>0) msgs.push(`${existing} já cadastrado(s) serão atualizados; status, contatos e observações são preservados.`);
+    if (ignorados>0) msgs.push(`${ignorados} linha(s) sem nome ou matrícula serão ignoradas.`);
+    warn.hidden = !msgs.length; warn.textContent = msgs.join(' ');
+  }
+}
+
+/* Etapa do Digitaliza a partir da coluna "Situações Colação" do farol */
+function normalizeEtapa(raw) {
+  const v = normTxt(raw).trim();
+  if (!v) return null;
+  const m = v.match(/^(2\.0|2\.1|3\.0)/);
+  if (m) return m[1];
+  if (v.includes('revis')) return '2.1';
+  if (v.includes('aprovad')) return '3.0';
+  if (v.includes('pendente para colacao')) return '2.0';
+  if (v.includes('sem processo')) return 'sem_processo';
+  return null;
+}
+
+/* Normaliza status documental — cobre os valores Estácio e genéricos */
+function normalizeDocStatus(raw) {
+  if (raw === null || raw === undefined || String(raw).trim() === '') return null;
+  // Remove acentos e normaliza
+  const v = String(raw).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  // Regularizado / Aprovado
+  if (v.includes('aprovad') || v.includes('regulariz') || v === 'ok') return 'regularizado';
+  // Entregue / Em análise (documento enviado, aguardando análise)
+  if (v.includes('analise') || v.includes('em analise') || v.includes('entreg') ||
+      v.includes('postado') || v.includes('enviado') || v.includes('recebido')) return 'entregue';
+  // "NÃO POSTADO" → ainda não enviou = pendente
+  if (v.includes('nao post') || v.includes('nao enviado')) return 'pendente';
+  // Pendente genérico
+  if (v.includes('pend')) return 'pendente';
+  return null; // valor não reconhecido → mantém o existente
+}
+
+async function doImport() {
+  const nm  = document.getElementById('map-nome').value;
+  const mm  = document.getElementById('map-mat').value;
+  const mc  = document.getElementById('map-curso').value;
+  const mf  = document.getElementById('map-fantasia').value;
+  const mt  = document.getElementById('map-turno').value;
+  const mi  = document.getElementById('map-ingresso').value;
+  const mds = document.getElementById('map-doc-status').value;
+  const mbib= document.getElementById('map-bib').value;
+  const met = document.getElementById('map-etapa').value;
+  const changes = []; let novos = 0;
+
+  if (!nm||!mm) { updatePreview(); return; }
+
+  const isF = importTarget === 'formados';
+  const col = isF ? 'formados' : 'students';
+  const map = isF ? formados : students;
+
+  const toWrite = parsedRows.filter(r=>r[mm]&&r[nm]).map(r => {
+    const id = sanitizeId(r[mm]);
+    const ex = map.get(id);
+    if (isF) {
+      return {
+        ...(ex||{}),
+        id,
+        nome:   r[nm].trim(),
+        mat:    r[mm].trim(),
+        curso:  mc ? (r[mc]||'').trim() : (ex?.curso||''),
+        turno:  mt ? (r[mt]||'').trim() : (ex?.turno||''),
+        cerCon: ex?.cerCon || 'pendente',
+        obs:    ex?.obs    || '',
+        upd:    Date.now(),
+      };
+    }
+    const docFromSheet = mds ? normalizeDocStatus(r[mds]) : null;
+    const etapaFromSheet = met ? normalizeEtapa(r[met]) : null;
+    const newDoc = docFromSheet ?? ex?.doc ?? 'pendente';
+    const newEtapa = etapaFromSheet ?? ex?.etapa ?? '';
+    if (!ex) novos++;
+    else {
+      if ((ex.doc||'pendente') !== newDoc) changes.push([id, r[nm].trim(), 'doc', ex.doc||'pendente', newDoc]);
+      if ((ex.etapa||'') !== newEtapa)      changes.push([id, r[nm].trim(), 'etapa', ex.etapa||'', newEtapa]);
+    }
+    if (ex && ex.arq) changes.push([id, r[nm].trim(), 'arq', true, false]);
+    return {
+      ...(ex||{}),
+      arq: false,
+      id,
+      nome:     r[nm].trim(),
+      mat:      r[mm].trim(),
+      curso:    mc ? (r[mc]||'').trim() : (ex?.curso||''),
+      fantasia: mf ? (r[mf]||'').trim() : (ex?.fantasia||''),
+      turno:    mt ? (r[mt]||'').trim() : (ex?.turno||''),
+      ingresso: mi ? (r[mi]||'').trim() : (ex?.ingresso||''),
+      doc:  newDoc,
+      etapa: newEtapa,
+      aac:  ex?.aac  || 'pendente',
+      apt:  ex?.apt  || 'em_analise',
+      bib:  ex?.bib  || 'pendente',
+      obs:  ex?.obs  || '',
+      upd:  Date.now(),
+    };
+  });
+
+  if (toWrite.length===0) { updatePreview(); return; }
+
+  showStep(3);
+  const fill  = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+
+  if (dbCap) {
+    const CHUNK=100; let done=0;
+    for (let i=0;i<toWrite.length;i+=CHUNK) {
+      const chunk=toWrite.slice(i,i+CHUNK);
+      await Promise.all(chunk.map(s=>dbCap.doc(`${col}/${s.id}`).set(s)));
+      done+=chunk.length;
+      const pct=Math.round(done/toWrite.length*100);
+      fill.style.width=pct+'%';
+      label.textContent=`Importando… ${done} / ${toWrite.length}`;
+    }
+  } else {
+    toWrite.forEach(s=>map.set(s.id,s));
+    fill.style.width='100%'; label.textContent='Concluído';
+    if (!isF) { saveLS(); renderAll(); }
+    else renderFormados();
+  }
+
+  // arquivar quem não está no arquivo
+  let arquivados = 0;
+  const syncChk = document.getElementById('imp-sync-chk');
+  if (!isF && syncChk && syncChk.checked && !document.getElementById('imp-sync').hidden) {
+    const ids = new Set(toWrite.map(s => s.id));
+    const fora = activeStudents().filter(s => !ids.has(s.id));
+    const now = Date.now();
+    label.textContent = `Arquivando ${fora.length} alunos fora da base…`;
+    for (let i=0;i<fora.length;i+=100) {
+      const chunk = fora.slice(i,i+100);
+      if (dbCap) await Promise.all(chunk.map(s => dbCap.doc(`students/${s.id}`).update({arq:true, arqTs:now, upd:now})));
+      chunk.forEach(s => { s.arq = true; s.arqTs = now; changes.push([s.id, s.nome||s.id, 'arq', false, true]); });
+    }
+    arquivados = fora.length;
+    if (!dbCap) { saveLS(); renderAll(); }
+  }
+
+  const noun = isF ? 'formado' : 'aluno';
+  const whoImp = `${currentUser||'Equipe'} (importação)`;
+  for (let i=0;i<changes.length;i+=100)
+    await Promise.all(changes.slice(i,i+100).map(([sid,sn,f,from,to]) => logActivity(sid, sn, f, from, to, 'students', whoImp)));
+  const nMud = changes.filter(c => c[2] !== 'arq').length;
+  const resumoImp = `${toWrite.length} ${noun}${toWrite.length!==1?'s':''}` + (isF ? '' : `, ${novos} novo${novos!==1?'s':''}, ${nMud} mudança${nMud!==1?'s':''} de status` + (arquivados ? `, ${arquivados} arquivado${arquivados!==1?'s':''} por não estar${arquivados!==1?'em':''} no arquivo` : ''));
+  await logActivity('', isF ? 'Formados' : 'Prováveis formandos', 'import', '', resumoImp, isF ? 'formados' : 'students', currentUser||'Equipe');
+  document.getElementById('success-msg').textContent =
+    `${toWrite.length} ${noun}${toWrite.length!==1?'s':''} importado${toWrite.length!==1?'s':''} com sucesso.` + (isF ? '' : ` ${novos} novo${novos!==1?'s':''} e ${nMud} mudança${nMud!==1?'s':''} de status registradas no histórico.` + (arquivados ? ` ${arquivados} aluno${arquivados!==1?'s':''} fora da base ${arquivados!==1?'foram arquivados':'foi arquivado'} (filtro Base > Arquivados).` : ''));
+  showStep(4);
+}
+
+/* ── CLEAR ── */
+/* senha de proteção: evita limpeza acidental */
+const CLEAR_CFG_LS = 'formandos_clear_cfg';
+let clearCfg = null, changingPwd = false, clearBusy = false;
+
+async function hashPwd(p){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('formandos-limpar:' + p));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function loadClearCfg(){
+  if (dbCap) {
+    try { const d = await dbCap.doc('config/clear').get(); return d && d.exists ? d.data() : null; }
+    catch(e){ console.error('[cfg]', e); return undefined; }
+  }
+  try { return JSON.parse(localStorage.getItem(CLEAR_CFG_LS) || 'null'); } catch(e){ return null; }
+}
+async function saveClearCfg(cfg){
+  if (dbCap) await dbCap.doc('config/clear').set(cfg);
+  else localStorage.setItem(CLEAR_CFG_LS, JSON.stringify(cfg));
+}
+function clrErr(msg){ const e = document.getElementById('clr-err'); e.textContent = msg || ''; e.hidden = !msg; }
+
+async function confirmClear() {
+  if (!requireUser()) return;
+  clearCfg = await loadClearCfg();
+  if (clearCfg === undefined) { showToast('Não foi possível verificar a senha. Tente de novo.'); return; }
+  changingPwd = false;
+  ['clr-pwd','clr-new1','clr-new2','clr-chg1','clr-chg2'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('clr-change').hidden = true;
+  document.getElementById('clr-change-link').textContent = 'Alterar a senha';
+  const has = !!(clearCfg && clearCfg.hash);
+  document.getElementById('clr-create').hidden = has;
+  document.getElementById('clr-ask').hidden = !has;
+  document.getElementById('clr-title').textContent = 'Limpar todos os dados?';
+  document.getElementById('clr-btn').textContent = has ? 'Sim, limpar tudo' : 'Criar senha';
+  clrErr('');
+  document.getElementById('confirm-modal').hidden = false;
+  setTimeout(() => document.getElementById(has ? 'clr-pwd' : 'clr-new1').focus(), 60);
+}
+function closeClear(){ document.getElementById('confirm-modal').hidden = true; }
+function toggleChangePwd(){
+  changingPwd = !changingPwd;
+  document.getElementById('clr-change').hidden = !changingPwd;
+  document.getElementById('clr-change-link').textContent = changingPwd ? 'Cancelar alteração' : 'Alterar a senha';
+  document.getElementById('clr-title').textContent = changingPwd ? 'Alterar a senha' : 'Limpar todos os dados?';
+  document.getElementById('clr-btn').textContent = changingPwd ? 'Salvar nova senha' : 'Sim, limpar tudo';
+  clrErr('');
+}
+
+async function clearAllData() {
+  if (clearBusy) return;
+  const has = !!(clearCfg && clearCfg.hash);
+  if (!has) {
+    const a = document.getElementById('clr-new1').value, b = document.getElementById('clr-new2').value;
+    if (a.length < 4) { clrErr('A senha precisa ter pelo menos 4 caracteres.'); return; }
+    if (a !== b) { clrErr('As senhas não são iguais.'); return; }
+    clearCfg = { hash: await hashPwd(a), by: currentUser, ts: Date.now() };
+    try { await saveClearCfg(clearCfg); } catch(e){ clrErr('Não foi possível salvar a senha.'); return; }
+    logActivity('', 'Senha de limpeza', 'pwd', '', 'senha criada', 'students', currentUser);
+    closeClear(); showToast('Senha criada. Nenhum dado foi apagado.'); return;
+  } else {
+    const ok = (await hashPwd(document.getElementById('clr-pwd').value)) === clearCfg.hash;
+    if (!ok) { clrErr('Senha incorreta. Nada foi apagado.'); document.getElementById('clr-pwd').select(); return; }
+    if (changingPwd) {
+      const a = document.getElementById('clr-chg1').value, b = document.getElementById('clr-chg2').value;
+      if (a.length < 4) { clrErr('A nova senha precisa ter pelo menos 4 caracteres.'); return; }
+      if (a !== b) { clrErr('As novas senhas não são iguais.'); return; }
+      clearCfg = { hash: await hashPwd(a), by: currentUser, ts: Date.now() };
+      try { await saveClearCfg(clearCfg); } catch(e){ clrErr('Não foi possível salvar a nova senha.'); return; }
+      logActivity('', 'Senha de limpeza', 'pwd', '', 'senha alterada', 'students', currentUser);
+      closeClear(); showToast('Senha alterada'); return;
+    }
+  }
+  clearBusy = true;
+  closeClear();
+  try {
+    if (dbCap) {
+      const snap=await dbCap.collection('students').get();
+      const ids=snap.docs.map(d=>d.id);
+      const CHUNK=100;
+      for (let i=0;i<ids.length;i+=CHUNK)
+        await Promise.all(ids.slice(i,i+CHUNK).map(id=>dbCap.doc(`students/${id}`).delete()));
+    } else { students.clear(); saveLS(); renderAll(); }
+    logActivity('', 'Prováveis formandos', 'clear', '', 'lista de alunos removida', 'students', currentUser||'Equipe');
+    showToast('Dados removidos');
+  } finally { clearBusy = false; }
+}
+
+/* ── EXPORT CSV ── */
+async function exportCSV() {
+  const rows=activeStudents().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  if (rows.length===0) { showToast('Nenhum dado para exportar'); return; }
+
+  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
+  const docMap={pendente:'Pendente',entregue:'Entregue',regularizado:'Regularizado'};
+  const aacMap={pendente:'Pendente',regularizado:'Regularizado',dispensado:'Dispensado'};
+  const aptMap={em_analise:'Em análise',apto:'Apto',nao_apto:'Não apto'};
+  const bibMap={pendente:'Pendente',solicitado:'Solicitado',ok:'OK'};
+
+  const sem = document.getElementById('sem-badge').textContent || '2026.2';
+  const csv = [
+    '﻿' + headers.join(';'),
+    ...rows.map(s=>[
+      cc(s.nome), cc(s.mat), cc(s.curso), cc(s.fantasia), cc(s.turno), cc(s.ingresso),
+      cc(ETAPA_LBL[s.etapa||'']||''),
+      cc(docMap[s.doc]||s.doc||''),
+      cc(aacMap[s.aac]||s.aac||''),
+      cc(aptMap[s.apt]||s.apt||''),
+      cc(bibMap[s.bib||'pendente']||s.bib||''),
+      cc(s.resp||''),
+      cc(lastContactOf(s) ? fmtDateTime(lastContactOf(s)) : ''),
+      cc(s.nextStep||''), cc(fmtDate(s.nextDue||'')),
+      cc(nextAction(s).text),
+      cc(lastContactItem.get(s.id) ? `${fmtDateTime(lastContactItem.get(s.id).ts)} ${lastContactItem.get(s.id).who}: ${lastContactItem.get(s.id).resumo}` : ''),
+      cc(s.obs||''),
+    ].join(';'))
+  ].join('\r\n');
+
+  const fname = `provaveis_formandos_${sem.replace('.','_')}_${new Date().toISOString().slice(0,10)}.csv`;
+  if (dlCap) {
+    await dlCap.save({ filename:fname, data:csv }).catch(()=>fallbackDL(csv, fname));
+  } else { fallbackDL(csv, fname); }
+}
+
+async function exportCSVFormados() {
+  const rows=[...formados.values()].sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  if (rows.length===0) { showToast('Nenhum dado para exportar'); return; }
+
+  const headers=['Nome','Matrícula','Curso','Turno','Confirmação Cerimônia','Observações'];
+  const cerMap={pendente:'Aguardando',confirmado:'Confirmado',nao_participa:'Não participa'};
+  const sem = document.getElementById('sem-badge').textContent || '2026.2';
+  const csv = [
+    '﻿' + headers.join(';'),
+    ...rows.map(s=>[
+      cc(s.nome), cc(s.mat), cc(s.curso), cc(s.turno),
+      cc(cerMap[s.cerCon]||s.cerCon||''),
+      cc(s.obs||''),
+    ].join(';'))
+  ].join('\r\n');
+
+  const fname = `formados_${sem.replace('.','_')}_${new Date().toISOString().slice(0,10)}.csv`;
+  if (dlCap) {
+    await dlCap.save({ filename:fname, data:csv }).catch(()=>fallbackDL(csv, fname));
+  } else { fallbackDL(csv, fname); }
+}
+
+function cc(v) {
+  const s=String(v||'');
+  return s.includes(';')||s.includes('"')||s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
+}
+function fallbackDL(csv, fname='formandos.csv') {
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=fname; a.click();
+}
+
+/* ── LOCAL STORAGE ── */
+function saveLS() {
+  try { const o={}; students.forEach((v,k)=>{o[k]=v;}); localStorage.setItem(LS_KEY,JSON.stringify(o)); } catch(e){}
+}
+function loadLS() {
+  try { const r=localStorage.getItem(LS_KEY); if(r) Object.entries(JSON.parse(r)).forEach(([k,v])=>students.set(k,v)); } catch(e){}
+}
+
+/* ── USER IDENTITY ── */
+const USER_KEY = 'formandos_user_name';
+let currentUser = '';
+
+function initials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+}
+
+function initUser() {
+  try { currentUser = localStorage.getItem(USER_KEY) || ''; } catch(e) { currentUser = ''; }
+  updateUserPill();
+  if (!currentUser) setTimeout(() => openNameModal(true), 900);
+}
+
+function updateUserPill() {
+  const av = document.getElementById('user-avatar');
+  const nm = document.getElementById('user-pill-name');
+  if (!av) return;
+  if (currentUser) {
+    av.textContent = initials(currentUser);
+    nm.textContent = currentUser.split(' ')[0];
+  } else {
+    av.textContent = '?';
+    nm.textContent = 'Identificar-me';
+  }
+}
+
+function openNameModal(isFirst) {
+  const input = document.getElementById('name-input');
+  input.value = currentUser;
+  document.getElementById('name-cancel-btn').hidden = isFirst && !currentUser ? false : false;
+  document.getElementById('name-modal').hidden = false;
+  setTimeout(() => input.focus(), 60);
+}
+
+function closeNameModal() { document.getElementById('name-modal').hidden = true; }
+
+function saveUserName() {
+  const val = document.getElementById('name-input').value.trim();
+  if (!val) { document.getElementById('name-input').focus(); return; }
+  currentUser = val;
+  try { localStorage.setItem(USER_KEY, val); } catch(e) {}
+  updateUserPill();
+  closeNameModal();
+  showToast('Olá, ' + val.split(' ')[0] + '!');
+}
+
+/* ── ACTIVITY LOG ── */
+const activityLog = []; // [{ts, who, sid, sname, field, from, to, _id}]
+
+function fieldLabel(f) {
+  if (f && f.startsWith('crit.')) { const c = CRIT_DEF.find(x => x.k === f.slice(5)); return 'Critério ' + (c ? c.short : f.slice(5)); }
+  if (f && f.startsWith('docchk.')) return 'Doc. conferido: ' + (DOC_SHORT[f.slice(7)] || f.slice(7));
+  return {doc:'Documentação', aac:'AAC', apt:'Aptidão', obs:'Observação', bib:'Biblioteca', cerCon:'Cerimônia',
+          etapa:'Etapa Digitaliza', arq:'Base', resp:'Responsável', fluxo:'Fluxo', ingTipo:'Forma de ingresso', nextStep:'Próximo passo'}[f] || f;
+}
+function valLabel(field, v) {
+  if (field === 'obs' || field === 'nextStep' || field === 'resp') return v ? `"${String(v).slice(0,40)}${String(v).length>40?'…':''}"` : '(vazio)';
+  if (field === 'etapa') return ETAPA_LBL[v||''] || v;
+  if (field === 'arq') return (v===true||v==='true') ? 'Arquivado' : 'Ativo';
+  if (field === 'fluxo') return ({regular:'Regular',antecipada:'Antecipada',especial:'Especial'})[v] || 'Regular';
+  if (field === 'ingTipo') return ({'':'Automático',vest:'Vestibular / ENEM',msv:'MSV',transf:'Transferência'})[v||''] || v;
+  if (field && field.startsWith('crit.')) return CRIT_VAL_LBL[v||'pend'] || v;
+  if (field && field.startsWith('docchk.')) return v==='sim' ? 'Sim' : 'Não';
+  const map = {
+    pendente:'Pendente', entregue:'Entregue', regularizado:'Regularizado',
+    dispensado:'Dispensado', em_analise:'Em análise', apto:'Apto', nao_apto:'Não apto',
+    solicitado:'Solicitado', ok:'OK',
+    confirmado:'Confirmado', nao_participa:'Não participa',
+  };
+  return map[v] || v || '—';
+}
+
+async function logActivity(sid, sname, field, from, to, col='students', whoOverride) {
+  const entry = { ts: Date.now(), who: whoOverride || currentUser || 'Não identificado', sid, sname, field, from: from ?? '', to: to ?? '', col };
+  const docId = `${entry.ts}_${Math.random().toString(36).slice(2,7)}`;
+  if (dbCap) {
+    try { await dbCap.doc(`activity/${docId}`).set(entry); }
+    catch(e) { console.error('[activity]', e); }
+  } else {
+    activityLog.unshift({...entry, _id: docId});
+    saveActivityLS();
+    const tab = document.getElementById('tab-atividade');
+    if (tab && tab.classList.contains('active')) renderActivity();
+  }
+}
+
+function subscribeActivity() {
+  if (!dbCap) return;
+  dbCap.collection('activity').onSnapshot(snap => {
+    snap.docChanges().forEach(ch => {
+      if (ch.type === 'removed') {
+        const i = activityLog.findIndex(a => a._id === ch.doc.id);
+        if (i >= 0) activityLog.splice(i,1);
+      } else if (ch.doc.exists) {
+        const d = {...ch.doc.data(), _id: ch.doc.id};
+        const i = activityLog.findIndex(a => a._id === ch.doc.id);
+        if (i >= 0) activityLog[i] = d; else activityLog.push(d);
+      }
+    });
+    activityLog.sort((a,b) => b.ts - a.ts);
+    renderActivity();
+    refreshDrawer(false);
+  }, err => console.error('[activity snap]', err));
+}
+
+function relTime(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'agora mesmo';
+  if (diff < 3600000) return `${Math.floor(diff/60000)} min atrás`;
+  if (diff < 86400000) {
+    const h = Math.floor(diff/3600000);
+    return `${h}h atrás`;
+  }
+  return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+}
+
+function dayLabel(ts) {
+  const d = new Date(ts);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yest  = new Date(today); yest.setDate(yest.getDate()-1);
+  const dMid  = new Date(d); dMid.setHours(0,0,0,0);
+  if (dMid.getTime() === today.getTime()) return 'Hoje';
+  if (dMid.getTime() === yest.getTime())  return 'Ontem';
+  return d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+}
+
+function renderActivity() {
+  const feed = document.getElementById('act-feed');
+  if (!feed) return;
+
+  const all = [...activityLog.map(a => ({...a, kind: (a.field==='import'||a.field==='clear'||a.field==='pwd') ? 'import' : 'change'})),
+               ...contacts.map(c => ({...c, kind:'contact'}))].sort((a,b) => b.ts - a.ts);
+
+  const todayMid = new Date(); todayMid.setHours(0,0,0,0);
+  const todayItems = all.filter(a => a.ts >= todayMid.getTime());
+  setText('act-stat-today', todayItems.length);
+  setText('act-stat-members', new Set(todayItems.map(a => (a.who||'').replace(' (importação)',''))).size);
+  setText('act-stat-total', all.length);
+
+  const q = normTxt(document.getElementById('act-search')?.value || '');
+  const tp = document.getElementById('act-type')?.value || 'all';
+  const list = all.filter(a => {
+    if (tp !== 'all' && a.kind !== tp) return false;
+    if (q && !normTxt([a.who, a.sname, a.resumo, a.retorno, a.prox, a.canal, a.to, a.from].join(' ')).includes(q)) return false;
+    return true;
+  });
+
+  if (all.length === 0) {
+    feed.innerHTML = '<div class="act-empty">Nenhuma atividade registrada ainda.<br>Atualize algum status ou registre um contato para começar.</div>';
+    return;
+  }
+  if (list.length === 0) { feed.innerHTML = '<div class="act-empty">Nada encontrado com esse filtro.</div>'; return; }
+
+  const studentLink = a => (a.sid && students.has(a.sid) && (a.col||'students')==='students')
+    ? `<button class="link-btn act-student" onclick="openDrawer('${esc(a.sid)}')">${esc(a.sname||a.sid)}</button>`
+    : `<span class="act-student">${esc(a.sname||a.sid||'')}</span>`;
+
+  let html = ''; let lastDay = '';
+  for (const a of list.slice(0, 400)) {
+    const day = dayLabel(a.ts);
+    if (day !== lastDay) { html += `<div class="act-day-sep">${esc(day)}</div>`; lastDay = day; }
+    const ini = initials((a.who || 'E').replace(' (importação)',''));
+    let body;
+    if (a.kind === 'contact') {
+      body = `<span class="act-who">${esc(a.who||'Equipe')}</span> registrou <span class="act-field-tag">${esc(a.canal||'Contato')}</span> com ${studentLink(a)}
+        <span class="act-contact-txt">${esc(a.resumo||'')}${a.prox?`\nPróximo passo: ${esc(a.prox)}${a.prazo?' até '+fmtDate(a.prazo):''}`:''}</span>`;
+    } else if (a.field === 'import') {
+      body = `<span class="act-who">${esc(a.who||'Equipe')}</span> importou a planilha de <span class="act-field-tag">${esc(a.sname||'')}</span>: ${esc(a.to||'')}`;
+    } else if (a.field === 'pwd') {
+      body = `<span class="act-who">${esc(a.who||'Equipe')}</span> ${esc(a.to||'alterou a senha de limpeza')} <span class="act-field-tag">Limpar dados</span>`;
+    } else if (a.field === 'clear') {
+      body = `<span class="act-who">${esc(a.who||'Equipe')}</span> limpou a <span class="act-field-tag">${esc(a.sname||'')}</span>`;
+    } else {
+      body = `<span class="act-who">${esc(a.who||'Equipe')}</span> alterou
+        <span class="act-field-tag">${esc(fieldLabel(a.field))}</span>
+        de <span class="act-val">${esc(valLabel(a.field, a.from))}</span> para
+        <span class="act-val">${esc(valLabel(a.field, a.to))}</span>
+        de ${studentLink(a)}`;
+    }
+    html += `<div class="act-entry"><div class="act-avatar">${esc(ini)}</div><div class="act-body">${body}</div><div class="act-time" title="${fmtDateTime(a.ts)}">${relTime(a.ts)}</div></div>`;
+  }
+  feed.innerHTML = html;
+}
+
+// Refresh tempos relativos a cada minuto
+setInterval(() => {
+  const tab = document.getElementById('tab-atividade');
+  if (tab && tab.classList.contains('active')) renderActivity();
+}, 60000);
+
+/* ════════════════════════════════════════════
+   FORMADOS
+════════════════════════════════════════════ */
+function subscribeFormados() {
+  if (!dbCap) return;
+  unsubFormados = dbCap.collection('formados').onSnapshot(snap => {
+    snap.docChanges().forEach(ch => {
+      if (ch.type === 'removed') formados.delete(ch.doc.id);
+      else if (ch.doc.exists) formados.set(ch.doc.id, ch.doc.data());
+    });
+    updateFormadosStats();
+    // re-render only if tab is active
+    const tab = document.getElementById('tab-formados');
+    if (tab && tab.classList.contains('active')) renderFormados();
+  }, err => console.error('[formados]', err));
+}
+
+function updateFormadosStats() {
+  const all = [...formados.values()];
+  setText('fs-total', all.length);
+  setText('fs-conf',  all.filter(s => s.cerCon === 'confirmado').length);
+  setText('fs-naop',  all.filter(s => s.cerCon === 'nao_participa').length);
+  setText('fs-pend',  all.filter(s => (s.cerCon || 'pendente') === 'pendente').length);
+}
+
+function getFormadosFiltered() {
+  const q    = (document.getElementById('ff-search').value||'').toLowerCase();
+  const turno= document.getElementById('ff-turno').value;
+  const curso= document.getElementById('ff-curso').value;
+  const cer  = document.getElementById('ff-cer').value;
+
+  return [...formados.values()].filter(s => {
+    if (q && !((s.nome||'').toLowerCase().includes(q)||(s.mat||'').includes(q))) return false;
+    if (turno !== 'all' && s.turno !== turno) return false;
+    if (curso !== 'all' && s.curso !== curso) return false;
+    if (cer   !== 'all' && (s.cerCon||'pendente') !== cer) return false;
+    return true;
+  }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+}
+
+function applyFormadosFilters() { renderFormados(); }
+
+function renderFormados() {
+  updateFormadosStats();
+
+  // update filter dropdowns
+  const vals = [...formados.values()];
+
+  const cursoSel = document.getElementById('ff-curso');
+  const curCurso = cursoSel.value;
+  const cursos = [...new Set(vals.map(s=>s.curso||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  cursoSel.innerHTML = '<option value="all">Todos os cursos</option>' +
+    cursos.map(c=>`<option value="${esc(c)}" ${c===curCurso?'selected':''}>${esc(c)}</option>`).join('');
+
+  const turnoSel = document.getElementById('ff-turno');
+  const curTurno = turnoSel.value;
+  const turnos = [...new Set(vals.map(s=>s.turno||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  turnoSel.innerHTML = '<option value="all">Todos os turnos</option>' +
+    turnos.map(t=>`<option value="${esc(t)}" ${t===curTurno?'selected':''}>${esc(t)}</option>`).join('');
+
+  const filtered = getFormadosFiltered();
+  const tbody = document.getElementById('formados-tbody');
+  document.getElementById('ffilter-count').textContent =
+    formados.size > 0 ? `${filtered.length} de ${formados.size} formado${formados.size!==1?'s':''}` : '';
+
+  if (formados.size === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><p>Nenhum formado cadastrado ainda.</p><p>Clique em <strong>+ Importar formados</strong> para começar.</p></td></tr>`;
+    return;
+  }
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><p>Nenhum formado corresponde ao filtro aplicado.</p></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => {
+    const id = s.id;
+    return `<tr>
+      <td class="td-nome" title="${esc(s.nome||'')}">${esc(s.nome||'')}</td>
+      <td class="td-mat">${esc(s.mat||'')}</td>
+      <td class="td-curso" title="${esc(s.curso||'')}">${esc(s.curso||'')}</td>
+      <td class="td-turno">${esc(s.turno||'')||'<span style="color:var(--faint)">—</span>'}</td>
+      <td>${makeSelect(id,'cerCon',s.cerCon||'pendente',[['pendente','Aguardando'],['confirmado','Confirmado'],['nao_participa','Não participa']],'formados')}</td>
+      <td class="td-obs"><span class="obs-span" onclick="editObs(this,'${esc(id)}','formados')">${s.obs?esc(s.obs):'<span class="obs-empty">—</span>'}</span></td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.st-select').forEach(styleSelect);
+}
+
+/* ════════════════════════════════════════════
+   SEMESTRE
+════════════════════════════════════════════ */
+const SEM_KEY = 'formandos_semestre';
+
+function initSem() {
+  try {
+    const sem = localStorage.getItem(SEM_KEY) || '2026.2';
+    const badge = document.getElementById('sem-badge');
+    if (badge) badge.textContent = sem;
+    const input = document.getElementById('sem-input');
+    if (input) input.value = sem;
+  } catch(e) {}
+}
+
+async function carregarSemestreCompartilhado() {
+  if (!dbCap) return;
+  try {
+    const d = await dbCap.doc('config/sem').get();
+    if (d.exists && d.data() && d.data().valor) {
+      try { localStorage.setItem(SEM_KEY, d.data().valor); } catch(e) {}
+      initSem();
+    }
+  } catch (e) { console.error('[sem]', e); }
+}
+
+function openSemModal() {
+  const badge = document.getElementById('sem-badge');
+  const input = document.getElementById('sem-input');
+  if (input && badge) input.value = badge.textContent;
+  document.getElementById('sem-modal').hidden = false;
+  setTimeout(() => { if (input) { input.focus(); input.select(); } }, 60);
+}
+
+function closeSemModal() { document.getElementById('sem-modal').hidden = true; }
+
+function saveSem() {
+  const val = (document.getElementById('sem-input').value || '').trim();
+  if (!val) return;
+  try { localStorage.setItem(SEM_KEY, val); } catch(e) {}
+  if (dbCap) dbCap.doc('config/sem').set({ valor: val }).catch(e => console.error('[sem]', e));
+  document.getElementById('sem-badge').textContent = val;
+  closeSemModal();
+  showToast('Semestre atualizado para ' + val);
+}
+
+/* ── UTILS ── */
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setText(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
+function sanitizeId(s) { return s.trim().replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').slice(0,200)||'aluno_'+Date.now(); }
+
+let toastTimer;
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+/* ════════════════════════════════════════════
+   v4: FICHA DO ALUNO, PRÓXIMA AÇÃO, CONTATOS
+════════════════════════════════════════════ */
+const ETAPA_OPTS = [['','Não conferido'],['sem_processo','Sem processo'],['2.0','2.0 Doc. pendente'],['2.1','2.1 Revisão CSC'],['3.0','3.0 Doc. aprovada']];
+const ETAPA_LBL = Object.fromEntries(ETAPA_OPTS);
+const FLUXO_OPTS = [['regular','Regular'],['antecipada','Antecipada'],['especial','Especial']];
+const CRIT_DEF = [
+  {k:'hist',   short:'disciplinas',    label:'Aprovado em todas as disciplinas', where:'SIA: Histórico Escolar'},
+  {k:'aac',    short:'AAC',            label:'Horas mínimas de AAC', where:'SIA: Histórico de Atividade Complementar. Segue a coluna AAC', auto:true},
+  {k:'estagio',short:'estágio/NPJ',    label:'Estágio obrigatório concluído (NPJ em Direito)', where:'SIA: Administra Curso > Estágio > Lançamento de Estágio para Aluno'},
+  {k:'enade',  short:'ENADE',          label:'Sem pendência no ENADE', where:'Presencial: coordenador do curso. EAD: Portal Conexões'},
+  {k:'docs',   short:'documentação',   label:'Documentação aprovada', where:'Digitaliza: etapa 3.0. Segue Documentação e Etapa', auto:true},
+  {k:'reconh', short:'reconhecimento', label:'Reconhecimento do curso no histórico', where:'SIA: Histórico Escolar'},
+];
+const CRIT_VAL_LBL = {pend:'Pendente', ok:'OK', na:'Não se aplica'};
+
+const contacts = [];                 // [{_id, ts, who, sid, sname, canal, resumo, retorno, prox, prazo}]
+const lastContactBySid = new Map();
+const LS_CONTACTS = 'formandos_contacts_v1';
+const LS_ACTIVITY = 'formandos_activity_v1';
+let drawerId = null;
+
+function normTxt(v){ return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function fmtDateTime(ts){ return new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function daysSince(ts){ return ts ? Math.floor((Date.now()-ts)/86400000) : null; }
+function lastContactOf(s){ return Math.max(s.lastContact||0, lastContactBySid.get(s.id)||0) || 0; }
+
+function requireUser(){
+  if (currentUser) return true;
+  showToast('Identifique-se para registrar alterações');
+  openNameModal(false);
+  return false;
+}
+
+function critVal(s,k){
+  if (k==='aac')  return (s.aac==='regularizado'||s.aac==='dispensado') ? 'ok' : 'pend';
+  if (k==='docs') return (s.doc==='regularizado'||s.etapa==='3.0') ? 'ok' : 'pend';
+  return (s.crit && s.crit[k]) || 'pend';
+}
+
+function alertsOf(s){
+  const a = [];
+  const hoje = todayStr();
+  if (s.nextStep && s.nextDue) {
+    if (s.nextDue < hoje) a.push({lvl:'danger', t:'Prazo vencido em '+fmtDate(s.nextDue)});
+    else if (s.nextDue === hoje) a.push({lvl:'warn', t:'Prazo é hoje'});
+  }
+  if (s.apt !== 'apto') {
+    const lc = lastContactOf(s);
+    if (!lc) a.push({lvl:'warn', t:'Nunca contatado'});
+    else { const d = daysSince(lc); if (d > 7) a.push({lvl:'danger', t:`Sem contato há ${d} dias`}); }
+  }
+  return a;
+}
+
+function nextAction(s){
+  if (s.apt === 'apto') return {lvl:'ok', text:'Aluno apto. Acompanhar a data da colação e comunicar dia e horário da cerimônia.',
+    help:'Depois da colação, confira no SIA (Cadastro de Alunos > Validação para Colação/Diplomação) se a presença foi registrada. O diploma digital chega por e-mail em até 60 dias.'};
+  if (s.apt === 'nao_apto') return {lvl:'danger', text:'Aluno não apto. Comunicar o motivo do impedimento e o que falta para regularizar.',
+    help:'As pendências podem ser resolvidas a qualquer tempo. Depois de regularizar, o aluno entra na colação especial, que é quinzenal.'};
+  switch (s.etapa || '') {
+    case 'sem_processo': return {lvl:'warn', text:'Sem processo de colação. Verificar no SIA se o aluno está matriculado em todas as disciplinas que faltam.',
+      help:'O processo só é criado quando o aluno vira provável formando. Até lá, os documentos devem ser postados no processo original (Fase Beta ou Aluno).'};
+    case '2.0':
+      if (s.doc === 'entregue') return {lvl:'warn', text:'Aluno postou documento. Validar no Digitaliza e, se estiver tudo certo, enviar para 2.1 Revisão de Colação.',
+        help:'Selecione a etapa 2.1 e clique em Salvar. Se faltou o verso, o aluno precisa aguardar a validação antes de reenviar.'};
+      if (s.doc === 'regularizado') return {lvl:'warn', text:'Documentos validados. Enviar o processo para 2.1 Revisão de Colação.',
+        help:'No processo, selecione a etapa 2.1 e clique em Salvar. A partir daí a análise é do CSC.'};
+      return {lvl:'danger', text:'Documentação pendente. Cobrar o aluno dizendo exatamente qual documento falta.',
+        help:'Envio pelo Portal do Aluno > Pasta do Aluno > Meus Documentos, frente e verso em um único PDF, clicando em Submeter. Cobre só os documentos da lista abaixo.'};
+    case '2.1': return {lvl:'info', text:'Em revisão pelo CSC. Aguardar a análise.',
+      help:'Nesta etapa não se abre chamado de reconsideração. Se houver erro de análise depois, use o chamado que está no Guia.'};
+    case '3.0': {
+      const falt = CRIT_DEF.filter(c => c.k!=='docs' && critVal(s,c.k)==='pend');
+      if (falt.length) return {lvl:'warn', text:'Documentação aprovada. Falta conferir: '+falt.map(c=>c.short).join(', ')+'.',
+        help:'Confira cada critério no local indicado abaixo e marque como OK ou Não se aplica.'};
+      return {lvl:'ok', text:'Documentação e critérios conferidos. Aguardar a lista de aptos do CSC e atualizar a aptidão.',
+        help:'O CSC envia a lista de aptos e não aptos cerca de 15 dias após o fechamento do período.'};
+    }
+    default: return {lvl:'info', text:'Conferir no Digitaliza em que etapa está o processo de colação e registrar aqui.',
+      help:'Digitaliza Aluno > marcar Aluno, Fase Beta e Colação de Grau > matrícula > Buscar > abrir o processo do tipo Colação de Grau.'};
+  }
+}
+function rowLevel(s){
+  const al = alertsOf(s);
+  if (al.some(a=>a.lvl==='danger')) return 'danger';
+  const na = nextAction(s).lvl;
+  if (na==='danger') return 'danger';
+  if (na==='warn' || al.length) return 'warn';
+  return na;
+}
+
+/* documentos por forma de ingresso */
+const DOC_LBL = {
+  cert:'Certidão de nascimento ou casamento',
+  ident:'Documento de identificação civil dentro da validade',
+  cpf:'CPF',
+  em:'Conclusão do ensino médio: histórico, certificado ou diploma com a informação de conclusão (declaração e certidão não são aceitas)',
+  rne:'RNE dentro da validade (somente estrangeiros)',
+  dipl:'Diploma de nível superior registrado, frente e verso',
+  hist_orig:'Histórico escolar do ensino superior da instituição de origem',
+  dipl_lic:'Diploma de graduação em licenciatura (segunda licenciatura)',
+  dipl_fp:'Diploma de nível superior (formação pedagógica)',
+};
+const DOC_SHORT = {cert:'certidão', ident:'identidade', cpf:'CPF', em:'ensino médio', rne:'RNE', dipl:'diploma superior', hist_orig:'histórico de origem', dipl_lic:'diploma licenciatura', dipl_fp:'diploma superior (FP)'};
+const ING_OPTS = [['','Detectar pela forma de ingresso'],['vest','Vestibular / ENEM'],['msv','Matrícula sem vestibular (MSV)'],['transf','Transferência externa']];
+function ingTipoOf(s){
+  if (s.ingTipo) return s.ingTipo;
+  const v = normTxt(s.ingresso);
+  if (v.includes('transf')) return 'transf';
+  if (v.includes('msv') || v.includes('sem vestib') || v.includes('portador') || v.includes('diplomad') || v.includes('segunda grad') || v.includes('2a grad')) return 'msv';
+  return 'vest';
+}
+function docsFor(s){
+  const t = ingTipoOf(s);
+  let list = t==='msv' ? ['dipl','cpf','cert'] : t==='transf' ? ['hist_orig','em','cpf','cert'] : ['cert','ident','cpf','em','rne'];
+  const c = normTxt(s.curso);
+  if (c.includes('licenciatura') && (c.includes('segunda') || c.includes('2a '))) list.push('dipl_lic');
+  if (c.includes('formacao pedagogica')) list.push('dipl_fp');
+  return list;
+}
+
+/* salvar campos da ficha */
+async function saveStudent(id, patch, logs){
+  const s = students.get(id);
+  if (!s) return;
+  const now = Date.now();
+  for (const [k,v] of Object.entries(patch)) {
+    if (v && typeof v === 'object' && !Array.isArray(v)) s[k] = {...(s[k]||{}), ...v};
+    else s[k] = v;
+  }
+  s.upd = now;
+  if (dbCap) {
+    try { await dbCap.doc(`students/${id}`).update({...patch, upd:now}); }
+    catch(e){ console.error('[save]',e); showToast('Erro ao salvar'); return; }
+  } else saveLS();
+  (logs||[]).forEach(([f,from,to]) => logActivity(id, s.nome||id, f, from, to));
+  showToast('Salvo');
+  renderAll();
+  refreshDrawer(true);
+}
+
+function setDrawerField(field, val){
+  if (!requireUser()) { refreshDrawer(true); return; }
+  const s = students.get(drawerId); if (!s) return;
+  const prev = s[field] ?? '';
+  if (prev === val) return;
+  saveStudent(drawerId, {[field]:val}, [[field, prev, val]]);
+}
+function setCrit(k, val){
+  if (!requireUser()) return;
+  const s = students.get(drawerId); if (!s) return;
+  const prev = (s.crit && s.crit[k]) || 'pend';
+  if (prev === val) return;
+  saveStudent(drawerId, {crit:{[k]:val}}, [['crit.'+k, prev, val]]);
+}
+function toggleDoc(key, el){
+  if (!requireUser()) { el.checked = !el.checked; return; }
+  const s = students.get(drawerId); if (!s) return;
+  const val = el.checked;
+  saveStudent(drawerId, {docsChk:{[key]:val}}, [['docchk.'+key, val?'nao':'sim', val?'sim':'nao']]);
+}
+function finishNextStep(){
+  if (!requireUser()) return;
+  const s = students.get(drawerId); if (!s || !s.nextStep) return;
+  saveStudent(drawerId, {nextStep:'', nextDue:''}, [['nextStep', s.nextStep, '(concluído)']]);
+}
+
+/* ficha */
+function openDrawer(id){
+  if (!students.has(id)) { showToast('Aluno não está mais na lista'); return; }
+  drawerId = id;
+  ['c-retorno','c-resumo','c-prox','c-prazo'].forEach(i => document.getElementById(i).value='');
+  document.getElementById('c-canal').selectedIndex = 0;
+  document.getElementById('drawer').hidden = false;
+  refreshDrawer(true);
+  document.querySelector('#drawer .drawer').scrollTop = 0;
+}
+function closeDrawer(){ document.getElementById('drawer').hidden = true; drawerId = null; }
+document.addEventListener('keydown', e => { if (e.key==='Escape' && drawerId) closeDrawer(); });
+
+function knownNames(){
+  const set = new Set();
+  if (currentUser) set.add(currentUser);
+  students.forEach(s => { if (s.resp) set.add(s.resp); });
+  activityLog.forEach(a => { if (a.who && !a.who.includes('(importação)') && a.who!=='Não identificado') set.add(a.who); });
+  contacts.forEach(c => { if (c.who) set.add(c.who); });
+  return [...set].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+}
+
+function refreshDrawer(force){
+  if (!drawerId) return;
+  const s = students.get(drawerId);
+  if (!s) { closeDrawer(); return; }
+  document.getElementById('dr-name').textContent = s.nome || s.mat;
+  document.getElementById('dr-meta').textContent = [s.mat, s.curso, s.turno, s.ingresso].filter(Boolean).join(', ');
+
+  const live = document.getElementById('dr-live');
+  const typing = live.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  if (force || !typing) live.innerHTML = drawerLiveHTML(s);
+  live.querySelectorAll('.st-select').forEach(styleSelect);
+  renderDrawerTimeline(s);
+}
+
+function drawerLiveHTML(s){
+  const na = nextAction(s);
+  const al = alertsOf(s);
+  const chips = al.map(a=>`<span class="chip ${a.lvl==='warn'?'warn':''}">${esc(a.t)}</span>`).join('');
+  const pend = s.nextStep ? `<div class="pending-step"><span><strong>Próximo passo combinado:</strong> ${esc(s.nextStep)}${s.nextDue?` até ${fmtDate(s.nextDue)}`:''}</span><button class="btn btn-ghost-dark" onclick="finishNextStep()">Marcar como feito</button></div>` : '';
+  const lc = lastContactOf(s);
+  const opt = (arr,v) => arr.map(([k,l])=>`<option value="${esc(k)}" ${k===v?'selected':''}>${esc(l)}</option>`).join('');
+  const names = knownNames().map(n=>`<option value="${esc(n)}">`).join('');
+
+  const crits = CRIT_DEF.map(c => {
+    const v = critVal(s,c.k);
+    const ctrl = c.auto
+      ? `<span class="auto-tag ${v}">${v==='ok'?'OK':'Pendente'}</span>`
+      : `<div class="seg" role="group" aria-label="${esc(c.label)}">${['pend','ok','na'].map(o=>`<button type="button" class="${v===o?'on-'+o:''}" aria-pressed="${v===o}" onclick="setCrit('${c.k}','${o}')">${CRIT_VAL_LBL[o]}</button>`).join('')}</div>`;
+    return `<div class="crit-row"><div>${esc(c.label)}<span class="crit-where">${esc(c.where)}</span></div>${ctrl}</div>`;
+  }).join('');
+
+  const chk = s.docsChk || {};
+  const docList = docsFor(s);
+  const docs = docList.map(k => `<label class="doc-item ${chk[k]?'done':''}"><input type="checkbox" ${chk[k]?'checked':''} onchange="toggleDoc('${k}',this)"><span>${esc(DOC_LBL[k])}</span></label>`).join('');
+  const docsDone = docList.filter(k=>chk[k]).length;
+
+  const fluxo = s.fluxo || 'regular';
+  const fluxoNote = fluxo==='antecipada'
+    ? `<p class="d-note warnbox">Antecipada: só com comprovante de convocação de concurso público ou emprego com prazo datado. Conferir todas as exigências, abrir o requerimento com o comprovante anexado. Se o histórico não fechou, fechar antes de solicitar (ver Guia).</p>`
+    : fluxo==='especial'
+    ? `<p class="d-note warnbox">Especial: entra na colação quinzenal assim que regularizar. Concluinte antes de 2014 precisa do requerimento Solicitar Colação de Grau Especial.</p>` : '';
+
+  const arqBox = s.arq ? `<div class="pending-step" style="margin-bottom:12px;background:var(--p1-bg);border:1px solid var(--p1-border)"><span><strong>Aluno arquivado</strong> em ${s.arqTs?fmtDateTime(s.arqTs):''}: não estava na última base importada.</span><button class="btn btn-ghost-dark" onclick="setDrawerField('arq',false)">Reativar</button></div>` : '';
+  return arqBox + `
+  <div class="next-box b-${na.lvl}">
+    <div class="next-title">Próxima ação</div>
+    <div class="next-text">${esc(na.text)}</div>
+    <div class="next-help">${esc(na.help)}</div>
+    ${chips?`<div class="chips">${chips}</div>`:''}
+    ${pend}
+  </div>
+
+  <section class="d-sec" style="margin-top:14px">
+    <h3>Situação <small>${lc?'último contato em '+fmtDateTime(lc):'nenhum contato registrado'}</small></h3>
+    <div class="d-grid">
+      <div class="d-field"><label>Etapa no Digitaliza</label>${makeSelect(s.id,'etapa',s.etapa||'',ETAPA_OPTS)}</div>
+      <div class="d-field"><label>Documentação</label>${makeSelect(s.id,'doc',s.doc||'pendente',[['pendente','Pendente'],['entregue','Entregue'],['regularizado','Regularizado']])}</div>
+      <div class="d-field"><label>AAC</label>${makeSelect(s.id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}</div>
+      <div class="d-field"><label>Aptidão</label>${makeSelect(s.id,'apt',s.apt||'em_analise',[['em_analise','Em análise'],['apto','Apto'],['nao_apto','Não apto']])}</div>
+      <div class="d-field"><label>Biblioteca (controle interno)</label>${makeSelect(s.id,'bib',s.bib||'pendente',[['pendente','Pendente'],['solicitado','Solicitado'],['ok','OK']])}</div>
+      <div class="d-field"><label>Fluxo de colação</label><select class="d-input" onchange="setDrawerField('fluxo',this.value)">${opt(FLUXO_OPTS,fluxo)}</select></div>
+      <div class="d-field" style="grid-column:1/-1"><label for="dr-resp">Responsável pelo aluno</label>
+        <input id="dr-resp" class="d-input" list="dr-names" value="${esc(s.resp||'')}" placeholder="Nome de quem acompanha este aluno" onchange="setDrawerField('resp',this.value.trim())">
+        <datalist id="dr-names">${names}</datalist></div>
+    </div>
+    ${fluxoNote}
+  </section>
+
+  <section class="d-sec" style="margin-top:14px">
+    <h3>Critérios de aptidão <small>PGE 04.128</small></h3>
+    ${crits}
+  </section>
+
+  <section class="d-sec" style="margin-top:14px">
+    <h3>Documentos exigidos <small>${docsDone} de ${docList.length} conferidos</small></h3>
+    <div class="d-field" style="margin-bottom:8px"><label>Forma de ingresso para a lista</label>
+      <select class="d-input" onchange="setDrawerField('ingTipo',this.value)">${opt(ING_OPTS,s.ingTipo||'')}</select></div>
+    ${docs}
+    <p class="d-note">Marque o documento quando estiver aprovado no Digitaliza. Documentos do exterior têm exigências extras (ver Guia).</p>
+  </section>`;
+}
+
+function studentTimeline(sid){
+  const items = [];
+  activityLog.forEach(a => { if (a.sid===sid && (a.col||'students')==='students') items.push({kind:'change', ...a}); });
+  contacts.forEach(c => { if (c.sid===sid) items.push({kind:'contact', ...c}); });
+  return items.sort((a,b)=>b.ts-a.ts);
+}
+function renderDrawerTimeline(s){
+  const items = studentTimeline(s.id);
+  document.getElementById('dr-tl-count').textContent = items.length ? `${items.length} registro${items.length!==1?'s':''}` : '';
+  const el = document.getElementById('dr-tl');
+  if (!items.length) { el.innerHTML = '<p class="tl-empty">Nenhum registro ainda. Os contatos e as mudanças de status deste aluno vão aparecer aqui.</p>'; return; }
+  el.innerHTML = items.map(it => {
+    const when = fmtDateTime(it.ts);
+    if (it.kind === 'contact') {
+      return `<div class="tl-item contact"><span class="tl-dot"></span><div>
+        <div class="tl-head"><strong>${esc(it.who||'Equipe')}</strong>, ${esc(it.canal||'contato')}, ${when}</div>
+        <div class="tl-text">${esc(it.resumo||'')}</div>
+        ${it.retorno?`<div class="tl-sub">Retorno do aluno: ${esc(it.retorno)}</div>`:''}
+        ${it.prox?`<div class="tl-next">Próximo passo: ${esc(it.prox)}${it.prazo?' até '+fmtDate(it.prazo):''}</div>`:''}
+      </div></div>`;
+    }
+    const imp = (it.who||'').includes('(importação)');
+    return `<div class="tl-item ${imp?'import':''}"><span class="tl-dot"></span><div>
+      <div class="tl-head"><strong>${esc(it.who||'Equipe')}</strong>, ${when}</div>
+      <div class="tl-text">${esc(fieldLabel(it.field))}: ${esc(valLabel(it.field,it.from))} para ${esc(valLabel(it.field,it.to))}</div>
+    </div></div>`;
+  }).join('');
+}
+
+async function saveContact(){
+  if (!requireUser()) return;
+  const s = students.get(drawerId); if (!s) return;
+  const resumo = document.getElementById('c-resumo').value.trim();
+  if (!resumo) { showToast('Descreva o que foi feito ou combinado'); document.getElementById('c-resumo').focus(); return; }
+  const c = {
+    ts: Date.now(), who: currentUser, sid: s.id, sname: s.nome||s.id,
+    canal: document.getElementById('c-canal').value,
+    resumo, retorno: document.getElementById('c-retorno').value.trim(),
+    prox: document.getElementById('c-prox').value.trim(),
+    prazo: document.getElementById('c-prazo').value || '',
+  };
+  const docId = `${c.ts}_${Math.random().toString(36).slice(2,7)}`;
+  if (dbCap) {
+    try { await dbCap.doc(`contacts/${docId}`).set(c); }
+    catch(e){ console.error('[contact]',e); showToast('Erro ao registrar contato'); return; }
+  } else {
+    contacts.push({...c, _id:docId}); saveContactsLS(); rebuildContactIndex();
+  }
+  const patch = {};
+  if (c.canal !== 'Nota interna') patch.lastContact = c.ts;
+  if (c.prox) { patch.nextStep = c.prox; patch.nextDue = c.prazo; }
+  ['c-retorno','c-resumo','c-prox','c-prazo'].forEach(i => document.getElementById(i).value='');
+  if (Object.keys(patch).length) await saveStudent(s.id, patch, []);
+  else { renderAll(); refreshDrawer(true); }
+  showToast('Contato registrado');
+}
+
+const lastContactItem = new Map();
+function lastRegHTML(s){
+  const c = lastContactItem.get(s.id);
+  if (!c) return '';
+  const n = contacts.filter(x => x.sid === s.id).length;
+  const d = new Date(c.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  const txt = (c.resumo||'').replace(/\s+/g,' ').trim();
+  return `<button class="last-reg" onclick="openDrawer('${esc(s.id)}')" title="${esc(c.resumo||'')}\n\nClique para ver o histórico completo"><span><b>${d}, ${esc((c.who||'').split(' ')[0])}${n>1?` (+${n-1})`:''}:</b> ${esc(txt)}</span></button>`;
+}
+function rebuildContactIndex(){
+  lastContactBySid.clear();
+  lastContactItem.clear();
+  contacts.forEach(c => { if ((lastContactItem.get(c.sid)?.ts||0) < c.ts) lastContactItem.set(c.sid, c); });
+  contacts.forEach(c => { if (c.canal==='Nota interna') return; if ((lastContactBySid.get(c.sid)||0) < c.ts) lastContactBySid.set(c.sid, c.ts); });
+}
+function subscribeContacts(){
+  if (!dbCap) return;
+  dbCap.collection('contacts').onSnapshot(snap => {
+    snap.docChanges().forEach(ch => {
+      const i = contacts.findIndex(c => c._id === ch.doc.id);
+      if (ch.type === 'removed') { if (i>=0) contacts.splice(i,1); }
+      else if (ch.doc.exists) { const d = {...ch.doc.data(), _id:ch.doc.id}; if (i>=0) contacts[i]=d; else contacts.push(d); }
+    });
+    rebuildContactIndex();
+    renderAll();
+    refreshDrawer(false);
+    const tab = document.getElementById('tab-atividade');
+    if (tab && tab.classList.contains('active')) renderActivity();
+  }, err => console.error('[contacts]', err));
+}
+function saveContactsLS(){ try { localStorage.setItem(LS_CONTACTS, JSON.stringify(contacts)); } catch(e){} }
+function saveActivityLS(){ try { localStorage.setItem(LS_ACTIVITY, JSON.stringify(activityLog.slice(0,2000))); } catch(e){} }
+function loadHistoryLS(){
+  try { const c = JSON.parse(localStorage.getItem(LS_CONTACTS)||'[]'); c.forEach(x=>contacts.push(x)); rebuildContactIndex(); } catch(e){}
+  try { const a = JSON.parse(localStorage.getItem(LS_ACTIVITY)||'[]'); a.forEach(x=>activityLog.push(x)); activityLog.sort((x,y)=>y.ts-x.ts); } catch(e){}
+}
+
+function copyTxt(btn, text){
+  const old = btn.textContent;
+  const done = () => { btn.textContent = 'Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent = old; btn.classList.remove('copied'); }, 1800); };
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(done).catch(()=>clipFallback(text, done));
+  else clipFallback(text, done);
+}
+
+</script>
+
+</body>
+</html>
