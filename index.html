@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <title>Painel Formandos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
 <style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style>
@@ -306,6 +307,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 .user-avatar{width:22px;height:22px;border-radius:50%;background:var(--navy);border:1.5px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
 
 /* ── NAME MODAL ── */
+body.perfil-atendente .admin-only{display:none!important}
+.sem-badge.somente-leitura{cursor:default;pointer-events:none}
 .name-modal-inner{text-align:center;padding:8px 0 4px;}
 .name-modal-icon{font-size:36px;margin-bottom:12px;}
 .name-modal-inner h3{font-size:17px;font-weight:600;margin-bottom:8px;}
@@ -528,10 +531,10 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
     </span>
     <button class="btn btn-ghost" id="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
     <button class="btn btn-ghost" id="btn-export-formados" hidden onclick="exportCSVFormados()">↓ Exportar CSV</button>
-    <button class="btn btn-danger-ghost" id="btn-clear" onclick="confirmClear()">Limpar dados</button>
-    <button class="btn btn-primary" id="btn-import" onclick="openImportAlunos()">+ Importar alunos</button>
-    <button class="btn btn-primary" id="btn-import-formados" hidden onclick="openImportFormados()">+ Importar formados</button>
-    <button class="user-pill" id="user-pill" onclick="openNameModal(false)" title="Clique para alterar seu nome">
+    <button class="btn btn-danger-ghost admin-only" id="btn-clear" onclick="confirmClear()">Limpar dados</button>
+    <button class="btn btn-primary admin-only" id="btn-import" onclick="openImportAlunos()">+ Importar alunos</button>
+    <button class="btn btn-primary admin-only" id="btn-import-formados" hidden onclick="openImportFormados()">+ Importar formados</button>
+    <button class="user-pill" id="user-pill" onclick="openUserModal()" title="Ver quem está conectado ou sair deste computador">
       <span class="user-avatar" id="user-avatar">?</span>
       <span id="user-pill-name">Identificar-me</span>
     </button>
@@ -590,7 +593,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
   </div>
 
   <div class="filters-bar">
-    <input type="search" class="filter-search" id="f-search" placeholder="Buscar por nome, matrícula…" oninput="applyFilters()">
+    <input type="search" autocomplete="off" class="filter-search" id="f-search" placeholder="Buscar por nome, matrícula…" oninput="applyFilters()">
     <select class="filter-select" id="f-turno" onchange="applyFilters()">
       <option value="all">Todos os turnos</option>
     </select>
@@ -703,7 +706,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
   </div>
 
   <div class="filters-bar">
-    <input type="search" class="filter-search" id="ff-search" placeholder="Buscar por nome, matrícula…" oninput="applyFormadosFilters()">
+    <input type="search" autocomplete="off" class="filter-search" id="ff-search" placeholder="Buscar por nome, matrícula…" oninput="applyFormadosFilters()">
     <select class="filter-select" id="ff-turno" onchange="applyFormadosFilters()">
       <option value="all">Todos os turnos</option>
     </select>
@@ -812,7 +815,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
       </div>
     </div>
     <div class="act-tools">
-      <input type="search" class="filter-search" id="act-search" placeholder="Buscar por aluno, pessoa ou texto" oninput="renderActivity()">
+      <input type="search" autocomplete="off" class="filter-search" id="act-search" placeholder="Buscar por aluno, pessoa ou texto" oninput="renderActivity()">
       <select class="filter-select" id="act-type" onchange="renderActivity()">
         <option value="all">Tudo</option>
         <option value="contact">Contatos</option>
@@ -1149,9 +1152,9 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
   <div class="modal-box modal-box-sm">
     <div class="modal-header"><h2>Acesso ao painel</h2></div>
     <div class="modal-body">
-      <p class="modal-desc">Digite a chave de acesso da equipe. Ela é pedida uma vez em cada computador.</p>
+      <p class="modal-desc">Digite a <strong>sua chave pessoal</strong> de acesso. Ela é pedida uma vez em cada computador e é ela que identifica você no histórico. Não tem chave? Peça à coordenação.</p>
       <div id="gas-url-row" class="d-field" style="margin-bottom:10px"><label for="gas-url">URL do Google Apps Script (termina em /exec)</label><input id="gas-url" class="d-input" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></div>
-      <div class="d-field"><label for="gas-key">Chave de acesso</label><input id="gas-key" class="d-input" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter') enviarCredenciais()"></div>
+      <div class="d-field"><label for="gas-key">Chave de acesso</label><input id="gas-key" class="d-input" type="password" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" onkeydown="if(event.key==='Enter') enviarCredenciais()"></div>
       <p id="gas-aviso" class="d-note" style="color:var(--danger-c);font-weight:600" hidden></p>
     </div>
     <div class="modal-footer"><button class="btn btn-primary" onclick="enviarCredenciais()">Entrar</button></div>
@@ -1161,21 +1164,20 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
 <div id="name-modal" hidden class="modal-overlay">
   <div class="modal-box modal-box-sm">
     <div class="modal-header">
-      <h2>Identificação</h2>
-      <button class="modal-close" onclick="closeNameModal()">✕</button>
+      <h2>Sua conta</h2>
+      <button class="modal-close" onclick="closeUserModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="name-modal-inner">
         <div class="name-modal-icon">👤</div>
-        <h3>Como você se chama?</h3>
-        <p>Seu nome será registrado nas atualizações que você fizer no painel, para que a equipe saiba quem realizou cada alteração.</p>
-        <input type="text" id="name-input" class="name-input" placeholder="Seu nome completo" maxlength="60"
-               onkeydown="if(event.key==='Enter') saveUserName()">
+        <h3 id="user-modal-nome">—</h3>
+        <p id="user-modal-perfil" style="margin-bottom:10px">—</p>
+        <p>O nome vem da sua chave e aparece em tudo o que você registrar. Em computador compartilhado, use "Sair deste computador" ao terminar.</p>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost-dark" id="name-cancel-btn" onclick="closeNameModal()">Agora não</button>
-      <button class="btn btn-primary" onclick="saveUserName()">Confirmar</button>
+      <button class="btn btn-ghost-dark" onclick="closeUserModal()">Fechar</button>
+      <button class="btn btn-danger-ghost" onclick="sairDesteComputador()">Sair deste computador</button>
     </div>
   </div>
 </div>
@@ -1572,7 +1574,7 @@ const STATUS_STYLE = {
    Cole a URL da implantação (termina em /exec) na constante abaixo.
    Se deixar como está, o painel pergunta a URL no primeiro acesso.
 ════════════════════════════════════════════ */
-const GAS_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6F0i5R90u3k7RVPDdQAkNb6uzNVcuajFqxlw98tbo1U8M2cyBlWAPf2E5RjKwRavH_Q/exec';
 const LS_GAS_URL = 'formandos_gas_url';
 const LS_GAS_KEY = 'formandos_gas_key';
 
@@ -1580,7 +1582,7 @@ const GasDB = (() => {
   const COLS = ['students', 'formados', 'activity', 'contacts'];
   const cache = {}, listeners = {};
   COLS.forEach(c => { cache[c] = new Map(); listeners[c] = []; });
-  let url = '', key = '', since = 0;
+  let url = '', key = '', since = 0, eu = null;
   let queue = [], flushing = false, flushTimer = null, epoch = 0;
   let polling = false, pollTimer = null, falhas = 0, precisaCompleto = false, ultimoErro = '';
 
@@ -1619,7 +1621,11 @@ const GasDB = (() => {
     let j;
     try { j = await r.json(); }
     catch (e) { const err = new Error('resposta inesperada, confira se a implantação está como "Qualquer pessoa"'); err.rede = true; throw err; }
-    if (j && j.error === 'auth') { const err = new Error('chave de acesso incorreta'); err.auth = true; throw err; }
+    if (j && ['auth', 'inativo', 'sem_acessos'].includes(j.error)) {
+      const err = new Error('acesso negado'); err.auth = true; err.motivo = j.error; err.velha = j.ver !== 2; throw err;
+    }
+    if (j && j.me) { const mudou = !eu || eu.nome !== j.me.nome || eu.perfil !== j.me.perfil; eu = j.me; if (mudou && window.onIdentidade) window.onIdentidade(eu); }
+    if (j && j.error === 'sem_permissao' && window.showToast) showToast('Seu perfil não permite esta ação. Recarregue a página.');
     return j;
   }
 
@@ -1658,7 +1664,7 @@ const GasDB = (() => {
         if (r.ok) return r;
         const err = new Error(r.error || 'erro ao gravar'); err.servidor = true; throw err;
       } catch (e) {
-        if (e.auth) { const ok = await GasDB._reautenticar(); if (ok) continue; throw e; }
+        if (e.auth) { const ok = await GasDB._reautenticar(e); if (ok) continue; throw e; }
         if (e.servidor || t >= esperas.length) throw e;
         await new Promise(res => setTimeout(res, esperas[t]));
       }
@@ -1708,7 +1714,7 @@ const GasDB = (() => {
       if (falhas) { falhas = 0; }
     } catch (e) {
       falhas++;
-      if (e.auth) { const ok = await GasDB._reautenticar(); if (ok) falhas = 0; }
+      if (e.auth) { const ok = await GasDB._reautenticar(e); if (ok) falhas = 0; }
     } finally { polling = false; atualizarRotulo(); }
   }
   function agendarSondagem() {
@@ -1791,14 +1797,21 @@ const GasDB = (() => {
     const r = pedido; pedido = null; if (r) r({ url: u, key: k });
   };
 
+  function msgAcesso(e) {
+    if (e && e.velha) return 'O servidor do Google (Apps Script) ainda está na versão antiga. A coordenação precisa publicar a "Nova versão" da implantação.';
+    if (e && e.motivo === 'inativo') return 'Seu acesso está desativado. Fale com a coordenação.';
+    if (e && e.motivo === 'sem_acessos') return 'Nenhum acesso foi cadastrado no servidor. A coordenação precisa rodar "configurar" no Apps Script.';
+    return 'Chave incorreta. Confira se copiou a chave inteira, com os hifens.';
+  }
   const urlFixa = () => GAS_URL && !/COLE_AQUI/.test(GAS_URL);
   return {
     ultimoErro: () => ultimoErro,
-    async _reautenticar() {
-      localStorage.removeItem(LS_GAS_KEY);
-      const c = await pedirCredenciais({ precisaUrl: false, aviso: 'A chave de acesso mudou ou está incorreta. Digite novamente.' });
+    async _reautenticar(e) {
+      try { localStorage.removeItem(LS_GAS_KEY); } catch (x) {}
+      const c = await pedirCredenciais({ precisaUrl: false, aviso: msgAcesso(e) });
       key = c.key; localStorage.setItem(LS_GAS_KEY, key); return true;
     },
+    eu: () => eu,
     async conectar() {
       url = urlFixa() ? GAS_URL : (localStorage.getItem(LS_GAS_URL) || '');
       key = localStorage.getItem(LS_GAS_KEY) || '';
@@ -1818,7 +1831,7 @@ const GasDB = (() => {
           agendarSondagem();
           return api;
         } catch (e) {
-          if (e.auth) { key = ''; try { localStorage.removeItem(LS_GAS_KEY); } catch (x) {} aviso = 'Chave de acesso incorreta.'; continue; }
+          if (e.auth) { key = ''; try { localStorage.removeItem(LS_GAS_KEY); } catch (x) {} aviso = msgAcesso(e); continue; }
           ultimoErro = e.message;
           if (urlFixa() && localStorage.getItem(LS_GAS_KEY)) return null;
           if (urlFixa()) return null;
@@ -2074,6 +2087,7 @@ function onDrop(e) {
 }
 
 async function restaurarBackup(file) {
+  if (!exigirAdmin()) return;
   if (!requireUser()) return;
   let bk;
   try { bk = JSON.parse(await file.text()); } catch (e) { impErr('Arquivo .json inválido.'); return; }
@@ -2209,8 +2223,8 @@ function findHeaderRow(grid){
 /* ── IMPORT ── */
 let importTarget = 'students'; // 'students' | 'formados'
 
-function openImportAlunos() { importTarget='students'; openImport(); }
-function openImportFormados() { importTarget='formados'; openImport(); }
+function openImportAlunos() { if (!exigirAdmin()) return; importTarget='students'; openImport(); }
+function openImportFormados() { if (!exigirAdmin()) return; importTarget='formados'; openImport(); }
 
 function openImport() {
   if (!requireUser()) return;
@@ -2414,6 +2428,7 @@ function normalizeDocStatus(raw) {
 }
 
 async function doImport() {
+  if (!exigirAdmin()) return;
   const nm  = document.getElementById('map-nome').value;
   const mm  = document.getElementById('map-mat').value;
   const mc  = document.getElementById('map-curso').value;
@@ -2552,6 +2567,7 @@ async function saveClearCfg(cfg){
 function clrErr(msg){ const e = document.getElementById('clr-err'); e.textContent = msg || ''; e.hidden = !msg; }
 
 async function confirmClear() {
+  if (!exigirAdmin()) return;
   if (!requireUser()) return;
   clearCfg = await loadClearCfg();
   if (clearCfg === undefined) { showToast('Não foi possível verificar a senha. Tente de novo.'); return; }
@@ -2693,9 +2709,10 @@ function loadLS() {
   try { const r=localStorage.getItem(LS_KEY); if(r) Object.entries(JSON.parse(r)).forEach(([k,v])=>students.set(k,v)); } catch(e){}
 }
 
-/* ── USER IDENTITY ── */
-const USER_KEY = 'formandos_user_name';
+/* ── IDENTIDADE (vem da chave de acesso, validada pelo servidor) ── */
+const USER_KEY = 'formandos_user_name';   // legado, removido ao sair
 let currentUser = '';
+let currentPerfil = '';
 
 function initials(name) {
   if (!name) return '?';
@@ -2704,10 +2721,24 @@ function initials(name) {
   return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
 }
 
-function initUser() {
-  try { currentUser = localStorage.getItem(USER_KEY) || ''; } catch(e) { currentUser = ''; }
+function initUser() { updateUserPill(); }
+
+function aplicarIdentidade(me) {
+  if (!me) return;
+  currentUser = me.nome || '';
+  currentPerfil = me.perfil || '';
+  document.body.classList.toggle('perfil-atendente', currentPerfil !== 'admin');
+  const sb = document.getElementById('sem-badge');
+  if (sb) { sb.classList.toggle('somente-leitura', currentPerfil !== 'admin'); sb.title = currentPerfil === 'admin' ? 'Clique para alterar o semestre' : 'Semestre da colação'; }
   updateUserPill();
-  if (!currentUser) setTimeout(() => openNameModal(true), 900);
+}
+window.onIdentidade = aplicarIdentidade;
+
+function ehAdmin() { return currentPerfil === 'admin'; }
+function exigirAdmin() {
+  if (ehAdmin()) return true;
+  showToast('Esta ação é só para administradores.');
+  return false;
 }
 
 function updateUserPill() {
@@ -2719,31 +2750,24 @@ function updateUserPill() {
     nm.textContent = currentUser.split(' ')[0];
   } else {
     av.textContent = '?';
-    nm.textContent = 'Identificar-me';
+    nm.textContent = 'Sem acesso';
   }
 }
 
-function openNameModal(isFirst) {
-  const input = document.getElementById('name-input');
-  input.value = currentUser;
-  document.getElementById('name-cancel-btn').hidden = isFirst && !currentUser ? false : false;
+function openUserModal() {
+  document.getElementById('user-modal-nome').textContent = currentUser || 'Sem acesso';
+  document.getElementById('user-modal-perfil').textContent = currentPerfil === 'admin' ? 'Administrador(a)' : (currentPerfil ? 'Atendente' : 'Não conectado');
   document.getElementById('name-modal').hidden = false;
-  setTimeout(() => input.focus(), 60);
+}
+function closeUserModal() { document.getElementById('name-modal').hidden = true; }
+function openNameModal() { openUserModal(); }
+function closeNameModal() { closeUserModal(); }
+
+function sairDesteComputador() {
+  try { localStorage.removeItem('formandos_gas_key'); localStorage.removeItem(USER_KEY); } catch(e) {}
+  location.reload();
 }
 
-function closeNameModal() { document.getElementById('name-modal').hidden = true; }
-
-function saveUserName() {
-  const val = document.getElementById('name-input').value.trim();
-  if (!val) { document.getElementById('name-input').focus(); return; }
-  currentUser = val;
-  try { localStorage.setItem(USER_KEY, val); } catch(e) {}
-  updateUserPill();
-  closeNameModal();
-  showToast('Olá, ' + val.split(' ')[0] + '!');
-}
-
-/* ── ACTIVITY LOG ── */
 const activityLog = []; // [{ts, who, sid, sname, field, from, to, _id}]
 
 function fieldLabel(f) {
@@ -3003,6 +3027,7 @@ async function carregarSemestreCompartilhado() {
 }
 
 function openSemModal() {
+  if (!exigirAdmin()) return;
   const badge = document.getElementById('sem-badge');
   const input = document.getElementById('sem-input');
   if (input && badge) input.value = badge.textContent;
@@ -3013,6 +3038,7 @@ function openSemModal() {
 function closeSemModal() { document.getElementById('sem-modal').hidden = true; }
 
 function saveSem() {
+  if (!exigirAdmin()) return;
   const val = (document.getElementById('sem-input').value || '').trim();
   if (!val) return;
   try { localStorage.setItem(SEM_KEY, val); } catch(e) {}
@@ -3066,8 +3092,7 @@ function lastContactOf(s){ return Math.max(s.lastContact||0, lastContactBySid.ge
 
 function requireUser(){
   if (currentUser) return true;
-  showToast('Identifique-se para registrar alterações');
-  openNameModal(false);
+  showToast('Você precisa estar conectado(a) para registrar alterações');
   return false;
 }
 
