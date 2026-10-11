@@ -308,6 +308,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
 /* ── NAME MODAL ── */
 body.perfil-atendente .admin-only{display:none!important}
+.aac-h{display:block;font-size:11px;font-weight:600;margin-top:3px}
+.aac-h.neg{color:var(--danger-c)}
+.aac-h.pos{color:#1a7f4b}
 .sem-badge.somente-leitura{cursor:default;pointer-events:none}
 .name-modal-inner{text-align:center;padding:8px 0 4px;}
 .name-modal-icon{font-size:36px;margin-bottom:12px;}
@@ -1084,6 +1087,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
         <div class="col-map-row"><label>Status Documentação</label><select id="map-doc-status"></select></div>
         <div class="col-map-row map-alunos-only"><label>Etapa Digitaliza (Situação Colação)</label><select id="map-etapa"></select></div>
         <div class="col-map-row map-alunos-only"><label>Nada Consta Biblioteca</label><select id="map-bib"></select></div>
+        <div class="col-map-row map-alunos-only"><label>AAC (saldo de horas: positivo cumprido, negativo pendente)</label><select id="map-aac"></select></div>
       </div>
       <p class="modal-note map-alunos-only">💡 Use o farol do CSC. Se o arquivo tiver a situação documental (DOCS) e a situação da colação (2.0, 2.1, 3.0), mapeie as colunas acima: o painel atualiza os alunos e registra cada mudança no histórico. Responsável, critérios, contatos e observações são mantidos.</p>
       <p class="preview-label">Pré-visualização (primeiros 5 registros)</p>
@@ -1994,7 +1998,7 @@ function renderTable() {
       <td class="td-ingresso" title="${esc(s.ingresso||'')}">${esc(s.ingresso||'') || dash}</td>
       <td>${makeSelect(id,'etapa',s.etapa||'',ETAPA_OPTS)}</td>
       <td>${makeSelect(id,'doc',s.doc||'pendente',[['pendente','Pendente'],['entregue','Entregue'],['regularizado','Regularizado']])}</td>
-      <td>${makeSelect(id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}</td>
+      <td>${makeSelect(id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}${aacHorasHtml(s)}</td>
       <td>${makeSelect(id,'apt',s.apt||'em_analise',[['em_analise','Em análise'],['apto','Apto'],['nao_apto','Não apto']])}</td>
       <td>${makeSelect(id,'bib',s.bib||'pendente',[['pendente','Pendente'],['solicitado','Solicitado'],['ok','OK']],'students')}</td>
       <td class="td-resp">${esc(s.resp||'') || dash}</td>
@@ -2288,7 +2292,7 @@ function analyzeCSV() {
 
   const none = '<option value="">— não mapear —</option>';
   const opts = none + parsedHeaders.map(h=>`<option value="${esc(h)}">${esc(h)}</option>`).join('');
-  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib'].forEach(id => {
+  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib','map-aac'].forEach(id => {
     document.getElementById(id).innerHTML = opts;
   });
 
@@ -2319,12 +2323,13 @@ function analyzeCSV() {
   document.getElementById('map-ingresso').value   = autoDetect('nom_forma_ingresso','forma_ingresso','ingresso');
   document.getElementById('map-doc-status').value = autoDetect('docs','situacao colacao','sit_colacao','sit_doc','doc_status','situacao_doc');
   document.getElementById('map-bib').value        = autoDetect('biblioteca','nada consta','nada_consta','bib');
+  document.getElementById('map-aac').value        = autoDetect('aac','saldo_aac','saldo aac','horas_aac');
   document.getElementById('map-etapa').value      = autoDetect('situacoes colacao','situacao colacao','situacoes_colacao','situacao_colacao','sit_colacao','etapa');
 
   updatePreview();
   showStep(2);
 
-  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib'].forEach(id => {
+  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib','map-aac'].forEach(id => {
     document.getElementById(id).addEventListener('change', updatePreview);
   });
 }
@@ -2427,6 +2432,21 @@ function normalizeDocStatus(raw) {
   return null; // valor não reconhecido → mantém o existente
 }
 
+function parseHoras(v) {
+  if (v === null || v === undefined) return null;
+  let t = String(v).trim().replace(/\s|h$/gi, '');
+  if (!t) return null;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(t);
+  return Number.isFinite(n) ? n : null;
+}
+function fmtHoras(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + String(Math.abs(n)).replace('.', ',') + ' h'; }
+function aacHorasHtml(s) {
+  if (s.aacSaldo === undefined || s.aacSaldo === null) return '';
+  const det = (s.aacExig !== undefined && s.aacExig !== null && s.aacObt !== undefined && s.aacObt !== null) ? ` title="Exigidas: ${s.aacExig} h · Obtidas: ${s.aacObt} h"` : '';
+  return `<span class="aac-h ${s.aacSaldo < 0 ? 'neg' : 'pos'}"${det}>${s.aacSaldo < 0 ? 'faltam ' + fmtHoras(Math.abs(s.aacSaldo)).replace('+','') : 'saldo ' + fmtHoras(s.aacSaldo)}</span>`;
+}
+
 async function doImport() {
   if (!exigirAdmin()) return;
   const nm  = document.getElementById('map-nome').value;
@@ -2438,6 +2458,10 @@ async function doImport() {
   const mds = document.getElementById('map-doc-status').value;
   const mbib= document.getElementById('map-bib').value;
   const met = document.getElementById('map-etapa').value;
+  const maac = document.getElementById('map-aac').value;
+  const hdrL = parsedHeaders.map(h => h.toLowerCase().trim());
+  const mExig = parsedHeaders[hdrL.indexOf('horas_aac_exigidas')] || '';
+  const mObt  = parsedHeaders[hdrL.indexOf('horas_obtidas')] || '';
   const changes = []; let novos = 0;
 
   if (!nm||!mm) { updatePreview(); return; }
@@ -2466,6 +2490,12 @@ async function doImport() {
     const etapaFromSheet = met ? normalizeEtapa(r[met]) : null;
     const newDoc = docFromSheet ?? ex?.doc ?? 'pendente';
     const newEtapa = etapaFromSheet ?? ex?.etapa ?? '';
+    const exigH = mExig ? parseHoras(r[mExig]) : null, obtH = mObt ? parseHoras(r[mObt]) : null;
+    let saldo = maac ? parseHoras(r[maac]) : null;
+    if (saldo === null && exigH !== null && obtH !== null) saldo = obtH - exigH;
+    let newAac = ex?.aac || 'pendente';
+    if (saldo !== null && newAac !== 'dispensado') newAac = saldo >= 0 ? 'regularizado' : 'pendente';
+    if (ex && (ex.aac||'pendente') !== newAac) changes.push([id, r[nm].trim(), 'aac', ex.aac||'pendente', newAac]);
     if (!ex) novos++;
     else {
       if ((ex.doc||'pendente') !== newDoc) changes.push([id, r[nm].trim(), 'doc', ex.doc||'pendente', newDoc]);
@@ -2484,7 +2514,10 @@ async function doImport() {
       ingresso: mi ? (r[mi]||'').trim() : (ex?.ingresso||''),
       doc:  newDoc,
       etapa: newEtapa,
-      aac:  ex?.aac  || 'pendente',
+      aac:  newAac,
+      aacSaldo: saldo !== null ? saldo : (ex?.aacSaldo ?? null),
+      aacExig:  exigH !== null ? exigH : (ex?.aacExig ?? null),
+      aacObt:   obtH  !== null ? obtH  : (ex?.aacObt  ?? null),
       apt:  ex?.apt  || 'em_analise',
       bib:  ex?.bib  || 'pendente',
       obs:  ex?.obs  || '',
@@ -2638,7 +2671,7 @@ async function exportCSV() {
   const rows=activeStudents().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   if (rows.length===0) { showToast('Nenhum dado para exportar'); return; }
 
-  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
+  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Saldo de horas AAC','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
   const docMap={pendente:'Pendente',entregue:'Entregue',regularizado:'Regularizado'};
   const aacMap={pendente:'Pendente',regularizado:'Regularizado',dispensado:'Dispensado'};
   const aptMap={em_analise:'Em análise',apto:'Apto',nao_apto:'Não apto'};
@@ -2652,6 +2685,7 @@ async function exportCSV() {
       cc(ETAPA_LBL[s.etapa||'']||''),
       cc(docMap[s.doc]||s.doc||''),
       cc(aacMap[s.aac]||s.aac||''),
+      cc(s.aacSaldo ?? ''),
       cc(aptMap[s.apt]||s.apt||''),
       cc(bibMap[s.bib||'pendente']||s.bib||''),
       cc(s.resp||''),
@@ -3309,7 +3343,7 @@ function drawerLiveHTML(s){
     <div class="d-grid">
       <div class="d-field"><label>Etapa no Digitaliza</label>${makeSelect(s.id,'etapa',s.etapa||'',ETAPA_OPTS)}</div>
       <div class="d-field"><label>Documentação</label>${makeSelect(s.id,'doc',s.doc||'pendente',[['pendente','Pendente'],['entregue','Entregue'],['regularizado','Regularizado']])}</div>
-      <div class="d-field"><label>AAC</label>${makeSelect(s.id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}</div>
+      <div class="d-field"><label>AAC</label>${makeSelect(s.id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}${aacHorasHtml(s)}${(s.aacExig!=null&&s.aacObt!=null)?`<small style="display:block;color:var(--muted);margin-top:2px">Exigidas ${s.aacExig} h · obtidas ${s.aacObt} h</small>`:''}</div>
       <div class="d-field"><label>Aptidão</label>${makeSelect(s.id,'apt',s.apt||'em_analise',[['em_analise','Em análise'],['apto','Apto'],['nao_apto','Não apto']])}</div>
       <div class="d-field"><label>Biblioteca (controle interno)</label>${makeSelect(s.id,'bib',s.bib||'pendente',[['pendente','Pendente'],['solicitado','Solicitado'],['ok','OK']])}</div>
       <div class="d-field"><label>Fluxo de colação</label><select class="d-input" onchange="setDrawerField('fluxo',this.value)">${opt(FLUXO_OPTS,fluxo)}</select></div>
