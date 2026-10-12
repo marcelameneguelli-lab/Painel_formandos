@@ -308,6 +308,17 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
 /* ── NAME MODAL ── */
 body.perfil-atendente .admin-only{display:none!important}
+.rg-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rg-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer}
+.rg-btn:hover{border-color:var(--navy);color:var(--navy)}
+.rg-btn[disabled]{opacity:.35;cursor:default}
+.rg-add{margin:4px 0 24px}
+.rg-meta{font-size:11px;color:var(--muted);padding:0 14px 10px}
+.rg-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.rg-edit-grid .full{grid-column:1/-1}
+.rg-prev{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.55;max-height:200px;overflow:auto}
+.modal-box.rg-wide{max-width:760px}
+@media(max-width:600px){.rg-edit-grid{grid-template-columns:1fr}}
 .aac-h{display:block;font-size:11px;font-weight:600;margin-top:3px}
 .aac-h.neg{color:var(--danger-c)}
 .aac-h.pos{color:#1a7f4b}
@@ -779,6 +790,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
       <p class="phase-desc">Orientar o aluno em cada exigência acadêmica e garantir que todas as pendências sejam resolvidas antes dos prazos finais.</p>
       <hr class="phase-rule rule-p1">
       <div id="phase1-cards"></div>
+      <div class="rg-add admin-only"><button class="rg-btn" onclick="novaMsg(1)">+ Nova mensagem nesta fase</button></div>
     </div>
 
     <!-- Fase 2 -->
@@ -791,6 +803,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
         <strong>Antes de enviar as mensagens desta fase:</strong> preencha data, horário e local da cerimônia nos campos marcados com <strong>[…]</strong>.
       </div>
       <div id="phase2-cards"></div>
+      <div class="rg-add admin-only"><button class="rg-btn" onclick="novaMsg(2)">+ Nova mensagem nesta fase</button></div>
     </div>
 
   </div>
@@ -1205,6 +1218,35 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
   </div>
 </div>
 
+<!-- ── EDITOR DA RÉGUA ── -->
+<div id="rg-modal" hidden class="modal-overlay">
+  <div class="modal-box rg-wide">
+    <div class="modal-header">
+      <h2 id="rg-titulo-modal">Editar mensagem</h2>
+      <button class="modal-close" onclick="fecharMsg()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="rg-edit-grid">
+        <div class="d-field full"><label for="rg-title">Título da mensagem</label><input id="rg-title" class="d-input" maxlength="120" autocomplete="off"></div>
+        <div class="d-field"><label for="rg-fase">Fase</label><select id="rg-fase" class="d-input"><option value="1">Fase 1 · Conclusão e Regularização</option><option value="2">Fase 2 · Caminho para a Colação</option></select></div>
+        <div class="d-field"><label for="rg-timing">Quando enviar</label><input id="rg-timing" class="d-input" maxlength="80" placeholder="Ex.: Início de novembro" autocomplete="off"></div>
+        <div class="d-field"><label for="rg-audience">Para quem</label><input id="rg-audience" class="d-input" maxlength="80" placeholder="Ex.: Todos os formandos" autocomplete="off"></div>
+        <div class="d-field"><label for="rg-badge">Selo no cartão</label><select id="rg-badge" class="d-input"><option value="">Sem selo</option><option value="p1">Regularização (azul)</option><option value="p2">Colação 2027 (verde)</option><option value="critical">Urgente (vermelho)</option></select></div>
+        <div class="d-field"><label for="rg-badgelabel">Texto do selo</label><input id="rg-badgelabel" class="d-input" maxlength="30" placeholder="Ex.: Prazo próximo" autocomplete="off"></div>
+        <div class="d-field full"><label for="rg-objective">Objetivo (aparece no rodapé do cartão)</label><input id="rg-objective" class="d-input" maxlength="200" autocomplete="off"></div>
+        <div class="d-field full"><label for="rg-text">Texto da mensagem</label><textarea id="rg-text" class="d-input" rows="11" oninput="prevMsg()" style="font-family:inherit;line-height:1.5"></textarea>
+          <p class="d-note">Use *asteriscos* para negrito e _sublinhado baixo_ para itálico no WhatsApp. Campos entre colchetes, como [data], precisam ser preenchidos antes do envio.</p></div>
+        <div class="d-field full"><label>Como vai aparecer</label><div id="rg-prev" class="rg-prev"></div></div>
+      </div>
+      <p id="rg-erro" class="d-note" style="color:var(--danger-c);font-weight:600" hidden></p>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div class="rg-tools"><button class="rg-btn" id="rg-del" onclick="excluirMsg()">Excluir</button><button class="rg-btn" id="rg-restore" onclick="restaurarMsg()" hidden>Voltar ao texto original</button></div>
+      <div class="rg-tools"><button class="btn btn-ghost-dark" onclick="fecharMsg()">Cancelar</button><button class="btn btn-primary" onclick="salvarMsg()">Salvar</button></div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1244,18 +1286,24 @@ function fmtWA(raw) {
 function buildCard(msg) {
   const i = WA_IDX++;
   WA_TEXTS[i] = msg.text;
-  const badgeH = msg.badge ? `<span class="badge badge-${msg.badge}">${msg.badgeLabel}</span>` : '';
+  const badgeH = msg.badge ? `<span class="badge badge-${esc(msg.badge)}">${esc(msg.badgeLabel||'')}</span>` : '';
+  const meta = msg._edit && msg.by ? `<div class="rg-meta">Editada por ${esc(msg.by)}${msg.upd ? ' em ' + fmtDateTime(msg.upd) : ''}</div>` : '';
+  const tools = `<span class="rg-tools admin-only">
+      <button class="rg-btn" title="Mover para cima" ${msg._first ? 'disabled' : ''} onclick="moverMsg('${msg.id}',-1)">↑</button>
+      <button class="rg-btn" title="Mover para baixo" ${msg._last ? 'disabled' : ''} onclick="moverMsg('${msg.id}',1)">↓</button>
+      <button class="rg-btn" onclick="editarMsg('${msg.id}')">Editar</button>
+    </span>`;
   return `
 <div class="msg-card">
   <div class="card-top">
-    <span class="msg-num">${msg.num}</span>
+    <span class="msg-num">${esc(msg.num)}</span>
     <div>
       <div class="title-row">
-        <span class="msg-title">${msg.title}</span>${badgeH}
+        <span class="msg-title">${esc(msg.title)}</span>${badgeH}
       </div>
       <div class="tag-row">
-        <span class="tag tag-timing">${msg.timing}</span>
-        <span class="tag tag-audience">${msg.audience}</span>
+        <span class="tag tag-timing">${esc(msg.timing)}</span>
+        <span class="tag tag-audience">${esc(msg.audience)}</span>
       </div>
     </div>
   </div>
@@ -1264,9 +1312,10 @@ function buildCard(msg) {
     <div class="bubble">${fmtWA(msg.text)}</div>
   </div>
   <div class="card-foot">
-    <span class="objective-txt">${msg.objective}</span>
-    <button class="copy-btn" onclick="copyWA(this,${i})">${ICON_COPY}<span>Copiar texto</span></button>
+    <span class="objective-txt">${esc(msg.objective)}</span>
+    <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${tools}<button class="copy-btn" onclick="copyWA(this,${i})">${ICON_COPY}<span>Copiar texto</span></button></span>
   </div>
+  ${meta}
 </div>`;
 }
 
@@ -1538,8 +1587,146 @@ Para outros trâmites pós-colação, a secretaria da unidade está à disposiç
 Muito obrigado(a) por fazerem parte desta história. 🎓✨`},
 ];
 
-document.getElementById('phase1-cards').innerHTML = phase1msgs.map(buildCard).join('');
-document.getElementById('phase2-cards').innerHTML = phase2msgs.map(buildCard).join('');
+/* ── RÉGUA EDITÁVEL ──
+   As mensagens originais ficam no código. Quando a administradora edita, move ou exclui uma,
+   o painel grava um registro na coleção "regua" (compartilhado com toda a equipe) que passa
+   a valer no lugar da original. Mensagens novas também ficam nessa coleção. */
+const BASE_REGUA = [
+  ...phase1msgs.map(m => ({ ...m, fase: 1 })),
+  ...phase2msgs.map(m => ({ ...m, fase: 2 })),
+].map((m, i) => ({ ...m, id: 'm' + m.num, ordem: (i + 1) * 10 }));
+const BASE_IDS = new Set(BASE_REGUA.map(m => m.id));
+const reguaMap = new Map();      // id -> registro gravado (edição, exclusão ou mensagem nova)
+let reguaEditId = null;
+
+function reguaLista() {
+  const out = [];
+  BASE_REGUA.forEach(b => {
+    const o = reguaMap.get(b.id);
+    if (o && o.deleted) return;
+    out.push(o ? { ...b, ...o, id: b.id, _edit: true } : { ...b });
+  });
+  reguaMap.forEach((o, id) => { if (!BASE_IDS.has(id) && !o.deleted) out.push({ ...o, id, _edit: true }); });
+  out.sort((a, b) => (a.fase - b.fase) || ((a.ordem || 0) - (b.ordem || 0)));
+  return out;
+}
+
+function renderRegua() {
+  WA_IDX = 0;
+  const lista = reguaLista();
+  let n = 0;
+  [1, 2].forEach(f => {
+    const doFase = lista.filter(m => Number(m.fase) === f);
+    doFase.forEach((m, i) => { m.num = String(++n).padStart(2, '0'); m._first = i === 0; m._last = i === doFase.length - 1; });
+    document.getElementById('phase' + f + '-cards').innerHTML = doFase.length
+      ? doFase.map(buildCard).join('')
+      : '<p class="d-note" style="margin:8px 0 16px">Nenhuma mensagem nesta fase.</p>';
+  });
+}
+renderRegua();
+
+function reguaGravar(id, dados) {
+  if (!dbCap) { showToast('Sem conexão com o Google Planilhas, tente de novo em instantes.'); return Promise.reject(new Error('sem conexão')); }
+  return dbCap.doc('regua/' + id).set({ ...dados, upd: Date.now(), by: currentUser || '' });
+}
+function reguaDados(m) {
+  return { fase: Number(m.fase), ordem: m.ordem, title: m.title, timing: m.timing, audience: m.audience,
+           objective: m.objective, badge: m.badge || '', badgeLabel: m.badgeLabel || '', text: m.text };
+}
+
+function abrirMsg(m, novo) {
+  reguaEditId = m.id;
+  document.getElementById('rg-titulo-modal').textContent = novo ? 'Nova mensagem' : 'Editar mensagem';
+  document.getElementById('rg-title').value = m.title || '';
+  document.getElementById('rg-fase').value = String(m.fase || 1);
+  document.getElementById('rg-timing').value = m.timing || '';
+  document.getElementById('rg-audience').value = m.audience || '';
+  document.getElementById('rg-badge').value = m.badge || '';
+  document.getElementById('rg-badgelabel').value = m.badgeLabel || '';
+  document.getElementById('rg-objective').value = m.objective || '';
+  document.getElementById('rg-text').value = m.text || '';
+  document.getElementById('rg-del').hidden = !!novo;
+  document.getElementById('rg-del').textContent = 'Excluir';
+  document.getElementById('rg-restore').hidden = !(m._base && m._edit);
+  document.getElementById('rg-erro').hidden = true;
+  prevMsg();
+  document.getElementById('rg-modal').hidden = false;
+  setTimeout(() => document.getElementById('rg-title').focus(), 60);
+}
+function prevMsg() { document.getElementById('rg-prev').innerHTML = fmtWA(document.getElementById('rg-text').value); }
+function fecharMsg() { document.getElementById('rg-modal').hidden = true; reguaEditId = null; }
+
+function editarMsg(id) {
+  if (!exigirAdmin()) return;
+  const m = reguaLista().find(x => x.id === id); if (!m) return;
+  abrirMsg({ ...m, _base: BASE_IDS.has(id) }, false);
+}
+function novaMsg(fase) {
+  if (!exigirAdmin()) return;
+  const doFase = reguaLista().filter(m => Number(m.fase) === fase);
+  const ordem = (doFase.length ? Math.max(...doFase.map(m => m.ordem || 0)) : 0) + 10;
+  abrirMsg({ id: 'c' + Date.now().toString(36), fase, ordem, title: '', timing: '', audience: 'Todos', badge: '', badgeLabel: '', objective: '', text: '' }, true);
+}
+async function salvarMsg() {
+  if (!exigirAdmin()) return;
+  const g = id => document.getElementById(id).value;
+  const erro = t => { const e = document.getElementById('rg-erro'); e.textContent = t; e.hidden = false; };
+  if (!g('rg-title').trim()) return erro('Digite o título da mensagem.');
+  if (!g('rg-text').trim()) return erro('Digite o texto da mensagem.');
+  if (g('rg-badge') && !g('rg-badgelabel').trim()) return erro('Digite o texto do selo ou escolha "Sem selo".');
+  const atual = reguaLista().find(x => x.id === reguaEditId);
+  const fase = Number(g('rg-fase'));
+  let ordem = atual ? atual.ordem : 0;
+  if (!atual || Number(atual.fase) !== fase) {
+    const outras = reguaLista().filter(m => Number(m.fase) === fase && m.id !== reguaEditId);
+    ordem = (outras.length ? Math.max(...outras.map(m => m.ordem || 0)) : 0) + 10;
+  }
+  const dados = { fase, ordem, title: g('rg-title').trim(), timing: g('rg-timing').trim(), audience: g('rg-audience').trim(),
+                  objective: g('rg-objective').trim(), badge: g('rg-badge'), badgeLabel: g('rg-badge') ? g('rg-badgelabel').trim() : '', text: g('rg-text').replace(/\s+$/,'') };
+  const id = reguaEditId;
+  try { await reguaGravar(id, dados); fecharMsg(); showToast('Mensagem salva para toda a equipe'); }
+  catch (e) { erro('Não foi possível salvar. ' + (e && e.message ? e.message : '') + ' Se o problema continuar, atualize a implantação do Apps Script (Nova versão).'); }
+}
+let rgConfirma = 0;
+async function excluirMsg() {
+  if (!exigirAdmin()) return;
+  const btn = document.getElementById('rg-del');
+  if (Date.now() - rgConfirma > 5000) { rgConfirma = Date.now(); btn.textContent = 'Clique de novo para confirmar'; return; }
+  rgConfirma = 0;
+  const id = reguaEditId;
+  try {
+    if (BASE_IDS.has(id)) await reguaGravar(id, { deleted: true, fase: (reguaLista().find(x => x.id === id) || {}).fase || 1 });
+    else await dbCap.doc('regua/' + id).delete();
+    fecharMsg(); showToast('Mensagem excluída');
+  } catch (e) { showToast('Não foi possível excluir.'); }
+}
+async function restaurarMsg() {
+  if (!exigirAdmin()) return;
+  try { await dbCap.doc('regua/' + reguaEditId).delete(); fecharMsg(); showToast('Voltou ao texto original'); }
+  catch (e) { showToast('Não foi possível restaurar.'); }
+}
+async function moverMsg(id, dir) {
+  if (!exigirAdmin()) return;
+  const lista = reguaLista();
+  const m = lista.find(x => x.id === id); if (!m) return;
+  const doFase = lista.filter(x => Number(x.fase) === Number(m.fase));
+  const i = doFase.findIndex(x => x.id === id), j = i + dir;
+  if (j < 0 || j >= doFase.length) return;
+  [doFase[i], doFase[j]] = [doFase[j], doFase[i]];
+  try {
+    await Promise.all(doFase.map((x, k) => ((k + 1) * 10 !== x.ordem || (k === i || k === j)) ? reguaGravar(x.id, { ...reguaDados(x), ordem: (k + 1) * 10, ...(x.deleted ? { deleted: true } : {}) }) : null).filter(Boolean));
+  } catch (e) { showToast('Não foi possível mover.'); }
+}
+function subscribeRegua() {
+  if (!dbCap) return;
+  dbCap.collection('regua').onSnapshot(snap => {
+    snap.docChanges().forEach(ch => {
+      if (ch.type === 'removed') reguaMap.delete(ch.doc.id);
+      else if (ch.doc.exists) reguaMap.set(ch.doc.id, ch.doc.data());
+    });
+    renderRegua();
+  }, err => console.error('[regua]', err));
+}
 
 /* ════════════════════════════════════════════
    PAINEL DE ALUNOS
@@ -1583,7 +1770,7 @@ const LS_GAS_URL = 'formandos_gas_url';
 const LS_GAS_KEY = 'formandos_gas_key';
 
 const GasDB = (() => {
-  const COLS = ['students', 'formados', 'activity', 'contacts'];
+  const COLS = ['students', 'formados', 'activity', 'contacts', 'regua'];
   const cache = {}, listeners = {};
   COLS.forEach(c => { cache[c] = new Map(); listeners[c] = []; });
   let url = '', key = '', since = 0, eu = null;
@@ -1864,6 +2051,7 @@ const GasDB = (() => {
     subscribeActivity();
     subscribeFormados();
     subscribeContacts();
+    subscribeRegua();
   } else {
     setSyncLabel('local','Sem conexão');
     const bn = document.createElement('div');
