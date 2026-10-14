@@ -759,6 +759,9 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
     <select class="filter-select" id="ff-curso" onchange="applyFormadosFilters()">
       <option value="all">Todos os cursos</option>
     </select>
+    <select class="filter-select" id="ff-data" onchange="applyFormadosFilters()">
+      <option value="all">Data da colação: Todas</option>
+    </select>
     <select class="filter-select" id="ff-cer" onchange="applyFormadosFilters()">
       <option value="all">Cerimônia: Todos</option>
       <option value="pendente">Aguardando</option>
@@ -3341,14 +3344,21 @@ function getFormadosFiltered() {
   const turno= document.getElementById('ff-turno').value;
   const curso= document.getElementById('ff-curso').value;
   const cer  = document.getElementById('ff-cer').value;
+  const dat  = document.getElementById('ff-data').value;
 
   return [...formados.values()].filter(s => {
     if (q && !((s.nome||'').toLowerCase().includes(q)||(s.mat||'').includes(q))) return false;
     if (turno !== 'all' && s.turno !== turno) return false;
     if (curso !== 'all' && s.curso !== curso) return false;
     if (cer   !== 'all' && (s.cerCon||'pendente') !== cer) return false;
+    if (dat === '__sem' && s.colacaoData) return false;
+    if (dat !== 'all' && dat !== '__sem' && s.colacaoData !== dat) return false;
     return true;
-  }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  }).sort((a,b)=>{
+    const da = a.colacaoData||'', db = b.colacaoData||'';
+    if (da !== db) { if (!da) return 1; if (!db) return -1; return da < db ? 1 : -1; }   // mais novo primeiro, sem data no fim
+    return (a.nome||'').localeCompare(b.nome||'','pt-BR');
+  });
 }
 
 function applyFormadosFilters() { renderFormados(); }
@@ -3370,6 +3380,13 @@ function renderFormados() {
   const turnos = [...new Set(vals.map(s=>s.turno||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   turnoSel.innerHTML = '<option value="all">Todos os turnos</option>' +
     turnos.map(t=>`<option value="${esc(t)}" ${t===curTurno?'selected':''}>${esc(t)}</option>`).join('');
+
+  const dataSel = document.getElementById('ff-data');
+  const curData = dataSel.value;
+  const datas = [...new Set(vals.map(s=>s.colacaoData||''))].filter(Boolean).sort().reverse();
+  dataSel.innerHTML = '<option value="all">Data da colação: Todas</option>' +
+    datas.map(d=>`<option value="${esc(d)}" ${d===curData?'selected':''}>${fmtDate(d)}</option>`).join('') +
+    (vals.some(s=>!s.colacaoData) ? `<option value="__sem" ${curData==='__sem'?'selected':''}>Sem data</option>` : '');
 
   const filtered = getFormadosFiltered();
   const tbody = document.getElementById('formados-tbody');
