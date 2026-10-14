@@ -308,6 +308,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 
 /* ── NAME MODAL ── */
 body.perfil-atendente .admin-only{display:none!important}
+.tab-count{display:inline-block;min-width:18px;padding:0 6px;margin-left:4px;border-radius:9px;background:rgba(255,255,255,.18);font-size:11px;font-weight:600;line-height:18px;text-align:center}
+.tab-count:empty{display:none}
+.cat-banner{margin:12px 20px 0;padding:9px 12px;border:1px solid var(--border);border-left:4px solid var(--navy);border-radius:6px;background:var(--surface);font-size:13px;line-height:1.5;color:var(--text)}
 .rg-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .rg-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer}
 .rg-btn:hover{border-color:var(--navy);color:var(--navy)}
@@ -557,7 +560,8 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
 
 <!-- TAB NAV -->
 <nav class="tab-nav">
-  <button class="tab-btn active" onclick="switchTab('alunos',this)">👥 Prováveis Formandos</button>
+  <button class="tab-btn active" id="nav-provaveis" onclick="switchTab('alunos',this)">👥 Prováveis Formandos <span class="tab-count" id="cnt-provaveis"></span></button>
+  <button class="tab-btn" id="nav-anteriores" onclick="switchTab('anteriores',this)">🗂️ Formandos de semestres anteriores <span class="tab-count" id="cnt-anteriores"></span></button>
   <button class="tab-btn" onclick="switchTab('formados',this)">🎓 Formados</button>
   <button class="tab-btn" onclick="switchTab('regua',this)">💬 Régua de Comunicação</button>
   <button class="tab-btn" onclick="switchTab('atividade',this)">📋 Atividade</button>
@@ -566,6 +570,8 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
 
 <!-- ══ TAB: ALUNOS ══ -->
 <div id="tab-alunos" class="tab-panel active">
+
+  <div class="cat-banner" id="cat-banner"></div>
 
   <div class="stats-bar" id="stats-bar">
     <div class="stat-tile">
@@ -601,6 +607,10 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
       <span class="stat-label">Sem contato 7d+</span>
     </div>
     <div class="stat-tile danger">
+      <span class="stat-num" id="s-consep">0</span>
+      <span class="stat-label">Consep em aberto</span>
+    </div>
+    <div class="stat-tile danger">
       <span class="stat-num" id="s-prazo">0</span>
       <span class="stat-label">Prazos vencidos</span>
     </div>
@@ -631,6 +641,16 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
       <option value="em_analise">Em análise</option>
       <option value="apto">Apto</option>
       <option value="nao_apto">Não apto</option>
+    </select>
+    <select class="filter-select" id="f-consep" onchange="applyFilters()">
+      <option value="all">Consep: Todos</option>
+      <option value="aberto">Em aberto (a solicitar ou solicitado)</option>
+      <option value="solicitar">A solicitar</option>
+      <option value="solicitado">Solicitado</option>
+      <option value="ajustado">Ajustado</option>
+    </select>
+    <select class="filter-select" id="f-origem" onchange="applyFilters()">
+      <option value="all">Base: Todas</option>
     </select>
     <select class="filter-select" id="f-bib" onchange="applyFilters()">
       <option value="all">Biblioteca: Todos</option>
@@ -681,13 +701,14 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
           <th>AAC</th>
           <th>Aptidão</th>
           <th>Biblioteca</th>
+          <th>Consep</th>
           <th>Responsável</th>
           <th>Último contato</th>
           <th>Último registro / Observações</th>
         </tr>
       </thead>
       <tbody id="student-tbody">
-        <tr><td colspan="15" class="empty-state">
+        <tr><td colspan="16" class="empty-state">
           <p>Nenhum aluno cadastrado ainda.</p>
           <p>Clique em <strong>+ Importar alunos</strong> para começar.</p>
         </td></tr>
@@ -730,6 +751,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
     <select class="filter-select" id="ff-cer" onchange="applyFormadosFilters()">
       <option value="all">Cerimônia: Todos</option>
       <option value="pendente">Aguardando</option>
+      <option value="colou">Colou grau</option>
       <option value="confirmado">Confirmado</option>
       <option value="nao_participa">Não participa</option>
     </select>
@@ -744,12 +766,13 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
           <th>Matrícula</th>
           <th>Curso</th>
           <th>Turno</th>
+          <th>Data da colação</th>
           <th>Confirmação Cerimônia</th>
           <th>Observações</th>
         </tr>
       </thead>
       <tbody id="formados-tbody">
-        <tr><td colspan="6" class="empty-state">
+        <tr><td colspan="7" class="empty-state">
           <p>Nenhum formado cadastrado ainda.</p>
           <p>Clique em <strong>+ Importar formados</strong> para começar.</p>
         </td></tr>
@@ -777,6 +800,8 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
         <span class="dl-pill-desc">Cerimônia de Colação de Grau</span>
       </div>
     </div>
+
+    <div class="inline-note" style="margin-bottom:12px">Esta régua é para os <strong id="regua-n">0</strong> prováveis formandos do semestre atual (aba Prováveis Formandos). Formandos de semestres anteriores têm acompanhamento individual e não entram na régua.</div>
 
     <div class="how-to">
       <span>💡</span>
@@ -1102,11 +1127,21 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
         <div class="col-map-row map-alunos-only"><label>Nada Consta Biblioteca</label><select id="map-bib"></select></div>
         <div class="col-map-row map-alunos-only"><label>AAC (saldo de horas: positivo cumprido, negativo pendente)</label><select id="map-aac"></select></div>
       </div>
+      <div class="col-map" style="margin-top:10px">
+        <div class="col-map-row"><label>Situação do aluno (Formado ou Formando)</label><select id="map-sit"></select></div>
+        <div class="col-map-row"><label>Data da colação (coluna "NO LIVRO")</label><select id="map-livro"></select></div>
+        <div class="col-map-row"><label>Grupo da base (coluna "SITUAÇÃO")</label><select id="map-grupo"></select></div>
+        <div class="col-map-row"><label>Cadastro de colação (SIM ou NÃO)</label><select id="map-cad"></select></div>
+        <div class="col-map-row"><label>Ocorrências / observações do sistema</label><select id="map-ocorr"></select></div>
+        <div class="col-map-row"><label>Grupo desta base</label><select id="imp-cat" onchange="updatePreview()"><option value="provaveis">Prováveis formandos (semestre atual, recebem a régua)</option><option value="anteriores">Formandos de semestres anteriores (fora da régua)</option></select></div>
+        <div class="col-map-row"><label>Nome desta base</label><input id="imp-origem" class="d-input" list="imp-origens" maxlength="60" autocomplete="off" placeholder="Ex.: Formandos 2026.1" oninput="updatePreview()"><datalist id="imp-origens"></datalist></div>
+      </div>
+      <p id="imp-split-info" class="modal-note" hidden></p>
       <p class="modal-note map-alunos-only">💡 Use o farol do CSC. Se o arquivo tiver a situação documental (DOCS) e a situação da colação (2.0, 2.1, 3.0), mapeie as colunas acima: o painel atualiza os alunos e registra cada mudança no histórico. Responsável, critérios, contatos e observações são mantidos.</p>
       <p class="preview-label">Pré-visualização (primeiros 5 registros)</p>
       <div class="preview-table-wrap"><div id="import-preview"></div></div>
       <div id="import-warning" hidden class="import-warning"></div>
-      <label id="imp-sync" class="map-alunos-only" hidden style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);font-size:13px;line-height:1.45;cursor:pointer">
+      <label id="imp-sync" hidden style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);font-size:13px;line-height:1.45;cursor:pointer">
         <input type="checkbox" id="imp-sync-chk" checked style="margin-top:3px;accent-color:var(--navy)">
         <span id="imp-sync-txt"></span>
       </label>
@@ -1252,10 +1287,14 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
 <script>
 /* ── TAB NAV ── */
 function switchTab(id, btn) {
+  const abaAnteriores = id === 'anteriores';
+  if (abaAnteriores) { viewCat = 'anteriores'; id = 'alunos'; }
+  else if (id === 'alunos') viewCat = 'provaveis';
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
+  if (id === 'alunos') renderAll();
   const isAlunos   = id === 'alunos';
   const isFormados = id === 'formados';
   document.getElementById('btn-export').hidden          = !isAlunos;
@@ -1758,6 +1797,9 @@ const STATUS_STYLE = {
   '2.0':        'background:var(--s-entr-bg);color:var(--s-entr-c)',
   '2.1':        'background:var(--s-disp-bg);color:var(--s-disp-c)',
   '3.0':        'background:var(--s-reg-bg);color:var(--s-reg-c)',
+  solicitar:    'background:var(--s-naoa-bg);color:var(--s-naoa-c)',
+  ajustado:     'background:var(--s-reg-bg);color:var(--s-reg-c)',
+  colou:        'background:var(--s-apto-bg);color:var(--s-apto-c)',
 };
 
 /* ════════════════════════════════════════════
@@ -2072,10 +2114,26 @@ function setSyncLabel(type, text) {
 
 /* ── RENDER ── */
 function activeStudents(){ return [...students.values()].filter(s => !s.arq); }
+/* Grupos: "provaveis" = alunos do semestre atual (recebem a régua de comunicação);
+   "anteriores" = formandos de semestres anteriores, com pendência e acompanhamento individual. */
+let viewCat = 'provaveis';
+const CAT_LBL = { provaveis: 'Prováveis formandos (semestre atual)', anteriores: 'Formandos de semestres anteriores' };
+function catDe(s){ return s.cat === 'anteriores' ? 'anteriores' : 'provaveis'; }
+function viewStudents(){ return activeStudents().filter(s => catDe(s) === viewCat); }
+function atualizaGrupos(){
+  const ativos = activeStudents();
+  const nP = ativos.filter(s => catDe(s) === 'provaveis').length, nA = ativos.length - nP;
+  setText('cnt-provaveis', nP || ''); setText('cnt-anteriores', nA || ''); setText('regua-n', nP);
+  const b = document.getElementById('cat-banner');
+  if (b) b.innerHTML = viewCat === 'provaveis'
+    ? '<strong>Prováveis formandos do semestre atual.</strong> Este grupo recebe a régua de comunicação (aba Régua de Comunicação).'
+    : '<strong>Formandos de semestres anteriores.</strong> Alunos que já deveriam ter concluído e ainda têm pendência. Acompanhamento individual, fora da régua de comunicação.';
+}
 function renderAll() { updateStats(); updateFilters(); renderTable(); }
 
 function updateStats() {
-  const all = activeStudents();
+  atualizaGrupos();
+  const all = viewStudents();
   setText('s-total',    all.length);
   setText('s-doc-pend', all.filter(s => s.doc === 'pendente').length);
   setText('s-aac-pend', all.filter(s => s.aac === 'pendente').length);
@@ -2085,17 +2143,24 @@ function updateStats() {
   setText('s-bib-pend', all.filter(s => (s.bib || 'pendente') === 'pendente').length);
   setText('s-semcont',  all.filter(s => s.apt !== 'apto' && (!lastContactOf(s) || daysSince(lastContactOf(s)) > 7)).length);
   const hoje = todayStr();
+  setText('s-consep',   all.filter(s => s.consep === 'solicitar' || s.consep === 'solicitado').length);
   setText('s-prazo',    all.filter(s => s.nextStep && s.nextDue && s.nextDue < hoje).length);
 }
 
 function updateFilters() {
-  const vals = activeStudents();
+  const vals = viewStudents();
 
   const cursoSel = document.getElementById('f-curso');
   const curCurso = cursoSel.value;
   const cursos = [...new Set(vals.map(s => s.curso||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   cursoSel.innerHTML = '<option value="all">Todos os cursos</option>' +
     cursos.map(c=>`<option value="${esc(c)}" ${c===curCurso?'selected':''}>${esc(c)}</option>`).join('');
+
+  const origSel = document.getElementById('f-origem');
+  if (origSel) {
+    const curO = origSel.value;
+    origSel.innerHTML = '<option value="all">Base: Todas</option>' + origensExistentes().map(o => `<option value="${esc(o)}" ${o===curO?'selected':''}>${esc(o)}</option>`).join('');
+  }
 
   const turnoSel = document.getElementById('f-turno');
   const curTurno = turnoSel.value;
@@ -2120,12 +2185,15 @@ function getFiltered() {
   const bib   = document.getElementById('f-bib').value;
   const etapa = document.getElementById('f-etapa').value;
   const resp  = document.getElementById('f-resp').value;
+  const consep = document.getElementById('f-consep').value;
+  const origem = document.getElementById('f-origem').value;
   const acomp = document.getElementById('f-acomp').value;
   const hoje  = todayStr();
   const em7   = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
 
   const base  = document.getElementById('f-base').value;
   return [...students.values()].filter(s => {
+    if (catDe(s) !== viewCat) return false;
     if (base === 'ativos' && s.arq) return false;
     if (base === 'arq' && !s.arq) return false;
     if (q && !((s.nome||'').toLowerCase().includes(q)||(s.mat||'').includes(q)||(s.fantasia||'').toLowerCase().includes(q))) return false;
@@ -2135,6 +2203,9 @@ function getFiltered() {
     if (aac   !== 'all' && s.aac   !== aac)   return false;
     if (apt   !== 'all' && s.apt   !== apt)   return false;
     if (bib   !== 'all' && (s.bib||'pendente') !== bib) return false;
+    if (consep === 'aberto' && !(s.consep === 'solicitar' || s.consep === 'solicitado')) return false;
+    if (consep !== 'all' && consep !== 'aberto' && (s.consep||'') !== consep) return false;
+    if (origem !== 'all' && origemDe(s) !== origem) return false;
     if (etapa !== 'all' && (s.etapa||'') !== etapa) return false;
     if (resp === '__none' && s.resp) return false;
     if (resp !== 'all' && resp !== '__none' && s.resp !== resp) return false;
@@ -2156,14 +2227,14 @@ function renderTable() {
   const filtered = getFiltered();
   const tbody = document.getElementById('student-tbody');
   document.getElementById('filter-count').textContent =
-    students.size > 0 ? `${filtered.length} de ${activeStudents().length} aluno${activeStudents().length!==1?'s':''} ativos` + (students.size>activeStudents().length ? `, ${students.size-activeStudents().length} arquivados` : '') : '';
+    students.size > 0 ? `${filtered.length} de ${viewStudents().length} aluno${viewStudents().length!==1?'s':''} ativos` + (students.size>activeStudents().length ? `, ${students.size-activeStudents().length} arquivados no total` : '') : '';
 
-  if (students.size === 0) {
-    tbody.innerHTML = `<tr><td colspan="15" class="empty-state"><p>Nenhum aluno cadastrado ainda.</p><p>Clique em <strong>+ Importar alunos</strong> para começar.</p></td></tr>`;
+  if (viewStudents().length === 0 && ![...students.values()].some(s => s.arq && catDe(s) === viewCat)) {
+    tbody.innerHTML = `<tr><td colspan="16" class="empty-state"><p>Nenhum aluno neste grupo ainda.</p><p>Clique em <strong>+ Importar alunos</strong> e escolha o grupo da base.</p></td></tr>`;
     return;
   }
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="15" class="empty-state"><p>Nenhum aluno corresponde ao filtro aplicado.</p></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="16" class="empty-state"><p>Nenhum aluno corresponde ao filtro aplicado.</p></td></tr>`;
     return;
   }
 
@@ -2177,7 +2248,7 @@ function renderTable() {
     const lcTxt = !lc ? 'Nunca' : d===0 ? 'Hoje' : d===1 ? 'Ontem' : `há ${d} dias`;
     const lcCls = !lc ? 'never' : (d>7 && s.apt!=='apto') ? 'late' : '';
     return `<tr>
-      <td class="td-nome"><button class="name-btn" onclick="openDrawer('${esc(id)}')" title="Abrir ficha de ${esc(s.nome||'')}"><span class="lvl-dot lvl-${lvl}"></span><span class="nb-txt">${esc(s.nome||'')}</span></button></td>
+      <td class="td-nome"><button class="name-btn" onclick="openDrawer('${esc(id)}')" title="Abrir ficha de ${esc(s.nome||'')}"><span class="lvl-dot lvl-${lvl}"></span><span class="nb-txt">${esc(s.nome||'')}</span></button>${colacaoChip(s)}</td>
       <td class="td-mat">${esc(s.mat||'')}</td>
       <td class="td-next" title="${esc(na.text)}"><span>${esc(na.text)}</span></td>
       <td class="td-curso" title="${esc(s.curso||'')}">${esc(s.curso||'')}</td>
@@ -2189,6 +2260,7 @@ function renderTable() {
       <td>${makeSelect(id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}${aacHorasHtml(s)}</td>
       <td>${makeSelect(id,'apt',s.apt||'em_analise',[['em_analise','Em análise'],['apto','Apto'],['nao_apto','Não apto']])}</td>
       <td>${makeSelect(id,'bib',s.bib||'pendente',[['pendente','Pendente'],['solicitado','Solicitado'],['ok','OK']],'students')}</td>
+      <td>${makeSelect(id,'consep',s.consep||'',CONSEP_OPTS,'students')}</td>
       <td class="td-resp">${esc(s.resp||'') || dash}</td>
       <td class="td-contact ${lcCls}" title="${lc?fmtDateTime(lc):'Nenhum contato registrado'}">${lcTxt}</td>
       <td class="td-obs">${lastRegHTML(s)}<span class="obs-span" onclick="editObs(this,'${esc(id)}','students')" title="Clique para editar a observação fixa">${s.obs ? esc(s.obs) : (lastContactItem.has(id) ? '' : '<span class="obs-empty">—</span>')}</span></td>
@@ -2310,6 +2382,7 @@ async function restaurarBackup(file) {
 }
 
 function loadFile(file) {
+  window._impArquivo = file.name;
   const nameEl = document.getElementById('file-drop-name');
   nameEl.textContent = '📄 ' + file.name;
   nameEl.hidden = false;
@@ -2480,23 +2553,23 @@ function analyzeCSV() {
 
   const none = '<option value="">— não mapear —</option>';
   const opts = none + parsedHeaders.map(h=>`<option value="${esc(h)}">${esc(h)}</option>`).join('');
-  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib','map-aac'].forEach(id => {
+  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib','map-aac','map-sit','map-livro','map-grupo','map-cad','map-ocorr'].forEach(id => {
     document.getElementById(id).innerHTML = opts;
   });
 
-  const lower = parsedHeaders.map(h => h.toLowerCase().trim());
+  const lower = parsedHeaders.map(h => normTxt(h).trim());
 
   // Auto-detecção inteligente: tenta match exato primeiro, depois parcial (mais longo vence)
   function autoDetect(...cands) {
     // 1. match exato (nome de coluna = candidato)
     for (const c of cands) {
-      const i = lower.indexOf(c.toLowerCase());
+      const i = lower.indexOf(normTxt(c).trim());
       if (i >= 0) return parsedHeaders[i];
     }
     // 2. match parcial — candidatos mais longos têm prioridade (evita falsos positivos)
     const byLen = [...cands].sort((a, b) => b.length - a.length);
     for (const c of byLen) {
-      const cl = c.toLowerCase();
+      const cl = normTxt(c).trim();
       const i = lower.findIndex(h => h.includes(cl));
       if (i >= 0) return parsedHeaders[i];
     }
@@ -2509,15 +2582,25 @@ function analyzeCSV() {
   document.getElementById('map-fantasia').value   = autoDetect('nom_fantasia','nome_fantasia','fantasia');
   document.getElementById('map-turno').value      = autoDetect('nom_turno','nome_turno','turno');
   document.getElementById('map-ingresso').value   = autoDetect('nom_forma_ingresso','forma_ingresso','ingresso');
-  document.getElementById('map-doc-status').value = autoDetect('docs','situacao colacao','sit_colacao','sit_doc','doc_status','situacao_doc');
+  document.getElementById('map-doc-status').value = autoDetect('documentos','docs','situacao colacao','sit_colacao','sit_doc','doc_status','situacao_doc');
   document.getElementById('map-bib').value        = autoDetect('biblioteca','nada consta','nada_consta','bib');
   document.getElementById('map-aac').value        = autoDetect('aac','saldo_aac','saldo aac','horas_aac');
+  document.getElementById('map-sit').value        = autoDetect('nom_situacao_aluno','situacao_aluno','situacao do aluno');
+  document.getElementById('map-livro').value      = autoDetect('no livro','livro');
+  document.getElementById('map-grupo').value      = parsedHeaders[lower.indexOf('situacao')] || '';
+  document.getElementById('map-cad').value        = autoDetect('cad_colacao','cadastro_colacao','cadastro colacao');
+  document.getElementById('map-ocorr').value      = autoDetect('txt_ocorrencia_17','ocorrencia');
+  document.getElementById('imp-origem').value     = origemDoArquivo(window._impArquivo || '');
+  { const ms = document.getElementById('map-sit').value;
+    const temFormando = ms && parsedRows.some(r => /^formand/.test(normTxt(r[ms]).trim()));
+    document.getElementById('imp-cat').value = temFormando ? 'anteriores' : viewCat; }
+  document.getElementById('imp-origens').innerHTML = origensExistentes().map(o => `<option value="${esc(o)}">`).join('');
   document.getElementById('map-etapa').value      = autoDetect('situacoes colacao','situacao colacao','situacoes_colacao','situacao_colacao','sit_colacao','etapa');
 
   updatePreview();
   showStep(2);
 
-  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib','map-aac'].forEach(id => {
+  ['map-nome','map-mat','map-curso','map-fantasia','map-turno','map-ingresso','map-doc-status','map-etapa','map-bib','map-aac','map-sit','map-livro','map-grupo','map-cad','map-ocorr'].forEach(id => {
     document.getElementById(id).addEventListener('change', updatePreview);
   });
 }
@@ -2558,12 +2641,22 @@ function updatePreview() {
 
   const count = parsedRows.filter(r=>mm&&nm&&r[mm]&&r[nm]).length;
   const sync = document.getElementById('imp-sync');
-  if (importTarget === 'students' && mm && count > 0) {
-    const ids = new Set(parsedRows.filter(r=>r[mm]&&r[nm]).map(r=>sanitizeId(r[mm])));
-    const fora = activeStudents().filter(s => !ids.has(s.id)).length;
+  const msit = document.getElementById('map-sit').value;
+  const origemTxt = (document.getElementById('imp-origem').value || '').trim();
+  const info = document.getElementById('imp-split-info');
+  if (mm && nm && count > 0) {
+    const linhas = parsedRows.filter(r => r[mm] && r[nm]);
+    const nF = linhas.filter(r => classificarLinha(r, msit) === 'formado').length;
+    const reconhece = msit && linhas.some(r => /^forma(do|ndo)/.test(normTxt(r[msit]).trim()));
+    info.hidden = false;
+    info.textContent = reconhece
+      ? `A coluna de situação foi reconhecida: ${nF} formado${nF !== 1 ? 's' : ''} (colaram grau) vão para a aba Formados e ${count - nF} formando${count - nF !== 1 ? 's' : ''} para ${document.getElementById('imp-cat').value === 'anteriores' ? 'a aba Formandos de semestres anteriores' : 'a aba Prováveis Formandos'}.`
+      : `Esta base não traz Formado ou Formando na situação do aluno, então todos os ${count} vão para ${importTarget === 'formados' ? 'a aba Formados' : (document.getElementById('imp-cat').value === 'anteriores' ? 'a aba Formandos de semestres anteriores' : 'a aba Prováveis Formandos')}.`;
+    const ids = new Set(linhas.map(r => sanitizeId(r[mm])));
+    const fora = foraDaBase(ids, origemTxt).length;
     sync.hidden = fora === 0;
-    document.getElementById('imp-sync-txt').innerHTML = `<strong>Usar este arquivo como a base atual.</strong> ${fora} aluno${fora!==1?'s':''} que est${fora!==1?'ão':'á'} no painel e não aparece${fora!==1?'m':''} no arquivo ser${fora!==1?'ão':'á'} arquivado${fora!==1?'s':''}. Eles saem da lista, mas status, contatos e histórico ficam guardados e voltam se o aluno aparecer numa próxima importação.`;
-  } else sync.hidden = true;
+    document.getElementById('imp-sync-txt').innerHTML = `<strong>Usar este arquivo como a base atual.</strong> ${fora} aluno${fora!==1?'s':''} da base "${esc(origemTxt || 'Base original')}" que est${fora!==1?'ão':'á'} no painel e não aparece${fora!==1?'m':''} neste arquivo ser${fora!==1?'ão':'á'} arquivado${fora!==1?'s':''}. Alunos de outras bases não são afetados. O histórico é mantido.`;
+  } else { info.hidden = true; sync.hidden = true; }
   const btn = document.getElementById('btn-do-import');
   btn.textContent = `Importar ${count} aluno${count!==1?'s':''}`;
   btn.disabled = count === 0;
@@ -2635,133 +2728,175 @@ function aacHorasHtml(s) {
   return `<span class="aac-h ${s.aacSaldo < 0 ? 'neg' : 'pos'}"${det}>${s.aacSaldo < 0 ? 'faltam ' + fmtHoras(Math.abs(s.aacSaldo)).replace('+','') : 'saldo ' + fmtHoras(s.aacSaldo)}</span>`;
 }
 
+function origemDe(s) { return s.origem || 'Base original'; }
+function origensExistentes() {
+  const set = new Set();
+  students.forEach(s => set.add(origemDe(s)));
+  formados.forEach(s => { if (s.origem) set.add(s.origem); });
+  return [...set].sort((x, y) => x.localeCompare(y, 'pt-BR'));
+}
+function origemDoArquivo(nome) {
+  return String(nome || '').replace(/\.[a-z0-9]+$/i, '').replace(/[_]+/g, ' ').replace(/\s*\(\d+\)\s*$/, '').replace(/\s+\d+$/, '').trim().slice(0, 60);
+}
+function parseDataBR(v) {
+  const m = String(v || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : '';
+}
+function livroTxt(s) {
+  if (s.colacaoData) return fmtDate(s.colacaoData);
+  const t = String(s.livro || '');
+  return t ? t.charAt(0) + t.slice(1).toLowerCase() : '';
+}
+/* Formado = colou grau no sistema. Formando = ainda tem algo a acompanhar. */
+function classificarLinha(r, msit) {
+  const padrao = importTarget === 'formados' ? 'formado' : 'formando';
+  if (!msit) return padrao;
+  const v = normTxt(r[msit]).trim();
+  if (v.startsWith('formado')) return 'formado';
+  if (v.startsWith('formando')) return 'formando';
+  return padrao;
+}
+function foraDaBase(ids, origem) {
+  const alvo = origem || 'Base original';
+  return activeStudents().filter(s => !ids.has(s.id) && origemDe(s) === alvo);
+}
+
 async function doImport() {
   if (!exigirAdmin()) return;
-  const nm  = document.getElementById('map-nome').value;
-  const mm  = document.getElementById('map-mat').value;
-  const mc  = document.getElementById('map-curso').value;
-  const mf  = document.getElementById('map-fantasia').value;
-  const mt  = document.getElementById('map-turno').value;
-  const mi  = document.getElementById('map-ingresso').value;
-  const mds = document.getElementById('map-doc-status').value;
-  const mbib= document.getElementById('map-bib').value;
-  const met = document.getElementById('map-etapa').value;
-  const maac = document.getElementById('map-aac').value;
-  const hdrL = parsedHeaders.map(h => h.toLowerCase().trim());
-  const mExig = parsedHeaders[hdrL.indexOf('horas_aac_exigidas')] || '';
-  const mObt  = parsedHeaders[hdrL.indexOf('horas_obtidas')] || '';
-  const changes = []; let novos = 0;
+  const v = id => document.getElementById(id).value;
+  const nm = v('map-nome'), mm = v('map-mat'), mc = v('map-curso'), mf = v('map-fantasia'), mt = v('map-turno'), mi = v('map-ingresso');
+  const mds = v('map-doc-status'), met = v('map-etapa'), maac = v('map-aac');
+  const msit = v('map-sit'), mlivro = v('map-livro'), mgrupo = v('map-grupo'), mcad = v('map-cad'), mocorr = v('map-ocorr');
+  const origem = v('imp-origem').trim().slice(0, 60);
+  const catImp = v('imp-cat') === 'anteriores' ? 'anteriores' : 'provaveis';
+  const hdrN = parsedHeaders.map(h => normTxt(h).trim());
+  const acha = (...ns) => { for (const n of ns) { const i = hdrN.indexOf(n); if (i >= 0) return parsedHeaders[i]; } return ''; };
+  const mExig = acha('horas_aac_exigidas'), mObt = acha('horas_obtidas', 'horas_aac_realizadas');
+  if (!nm || !mm) { updatePreview(); return; }
 
-  if (!nm||!mm) { updatePreview(); return; }
+  const changes = []; let novos = 0, nFormados = 0, nFormandos = 0, nMovidos = 0;
+  const alunosOut = [], formadosOut = [], apagarFormados = [], arquivarAlunos = [];
+  const now0 = Date.now();
 
-  const isF = importTarget === 'formados';
-  const col = isF ? 'formados' : 'students';
-  const map = isF ? formados : students;
-
-  const toWrite = parsedRows.filter(r=>r[mm]&&r[nm]).map(r => {
+  parsedRows.filter(r => r[mm] && r[nm]).forEach(r => {
     const id = sanitizeId(r[mm]);
-    const ex = map.get(id);
-    if (isF) {
-      return {
-        ...(ex||{}),
-        id,
-        nome:   r[nm].trim(),
-        mat:    r[mm].trim(),
-        curso:  mc ? (r[mc]||'').trim() : (ex?.curso||''),
-        turno:  mt ? (r[mt]||'').trim() : (ex?.turno||''),
-        cerCon: ex?.cerCon || 'pendente',
-        obs:    ex?.obs    || '',
-        upd:    Date.now(),
-      };
+    const nome = r[nm].trim();
+    const tipo = classificarLinha(r, msit);
+    const exS = students.get(id), exF = formados.get(id), ex = exS || exF;
+    const livro = mlivro ? (r[mlivro] || '').trim() : (ex?.livro || '');
+    const colacaoData = mlivro ? parseDataBR(livro) : (ex?.colacaoData || '');
+    const base = {
+      id, nome, mat: r[mm].trim(),
+      curso:    mc ? (r[mc] || '').trim() : (ex?.curso || ''),
+      fantasia: mf ? (r[mf] || '').trim() : (ex?.fantasia || ''),
+      turno:    mt ? (r[mt] || '').trim() : (ex?.turno || ''),
+      ingresso: mi ? (r[mi] || '').trim() : (ex?.ingresso || ''),
+      livro, colacaoData,
+      origem: origem || ex?.origem || '',
+      upd: now0,
+    };
+
+    if (tipo === 'formado') {
+      nFormados++;
+      if (!exF && !exS) novos++;
+      formadosOut.push({ ...(exF || {}), ...base, cerCon: exF?.cerCon || 'colou', obs: exF?.obs || exS?.obs || '' });
+      if (exS && !exS.arq) { arquivarAlunos.push(exS); nMovidos++; changes.push([id, nome, 'situacao', 'Formando', 'Formado']); }
+      return;
     }
+
+    nFormandos++;
     const docFromSheet = mds ? normalizeDocStatus(r[mds]) : null;
     const etapaFromSheet = met ? normalizeEtapa(r[met]) : null;
-    const newDoc = docFromSheet ?? ex?.doc ?? 'pendente';
-    const newEtapa = etapaFromSheet ?? ex?.etapa ?? '';
+    const newDoc = docFromSheet ?? exS?.doc ?? 'pendente';
+    const newEtapa = etapaFromSheet ?? exS?.etapa ?? '';
     const exigH = mExig ? parseHoras(r[mExig]) : null, obtH = mObt ? parseHoras(r[mObt]) : null;
     let saldo = maac ? parseHoras(r[maac]) : null;
     if (saldo === null && exigH !== null && obtH !== null) saldo = obtH - exigH;
-    let newAac = ex?.aac || 'pendente';
+    let newAac = exS?.aac || 'pendente';
     if (saldo !== null && newAac !== 'dispensado') newAac = saldo >= 0 ? 'regularizado' : 'pendente';
-    if (ex && (ex.aac||'pendente') !== newAac) changes.push([id, r[nm].trim(), 'aac', ex.aac||'pendente', newAac]);
-    if (!ex) novos++;
-    else {
-      if ((ex.doc||'pendente') !== newDoc) changes.push([id, r[nm].trim(), 'doc', ex.doc||'pendente', newDoc]);
-      if ((ex.etapa||'') !== newEtapa)      changes.push([id, r[nm].trim(), 'etapa', ex.etapa||'', newEtapa]);
+    const grupo = mgrupo ? (r[mgrupo] || '').trim() : (exS?.grupo || '');
+    const grupoN = normTxt(grupo);
+    let newApt = exS?.apt || 'em_analise';
+    if (newApt === 'em_analise' && grupoN.includes('apto') && !grupoN.includes('nao apto')) newApt = 'apto';
+    const ocorr = mocorr ? (r[mocorr] || '').trim() : (exS?.ocorr || '');
+    const cad = mcad ? (r[mcad] || '').trim() : (exS?.cadColacao || '');
+    const detectaConsep = normTxt([ocorr, grupo, livro, met ? r[met] : ''].join(' ')).includes('consep');
+
+    if (!exS && !exF) novos++;
+    else if (exS) {
+      if ((exS.doc || 'pendente') !== newDoc) changes.push([id, nome, 'doc', exS.doc || 'pendente', newDoc]);
+      if ((exS.etapa || '') !== newEtapa) changes.push([id, nome, 'etapa', exS.etapa || '', newEtapa]);
+      if ((exS.aac || 'pendente') !== newAac) changes.push([id, nome, 'aac', exS.aac || 'pendente', newAac]);
+      if ((exS.apt || 'em_analise') !== newApt) changes.push([id, nome, 'apt', exS.apt || 'em_analise', newApt]);
+      if (exS.arq) changes.push([id, nome, 'arq', true, false]);
+      if (catDe(exS) !== catImp) changes.push([id, nome, 'cat', catDe(exS), catImp]);
     }
-    if (ex && ex.arq) changes.push([id, r[nm].trim(), 'arq', true, false]);
-    return {
-      ...(ex||{}),
-      arq: false,
-      id,
-      nome:     r[nm].trim(),
-      mat:      r[mm].trim(),
-      curso:    mc ? (r[mc]||'').trim() : (ex?.curso||''),
-      fantasia: mf ? (r[mf]||'').trim() : (ex?.fantasia||''),
-      turno:    mt ? (r[mt]||'').trim() : (ex?.turno||''),
-      ingresso: mi ? (r[mi]||'').trim() : (ex?.ingresso||''),
-      doc:  newDoc,
-      etapa: newEtapa,
-      aac:  newAac,
-      aacSaldo: saldo !== null ? saldo : (ex?.aacSaldo ?? null),
-      aacExig:  exigH !== null ? exigH : (ex?.aacExig ?? null),
-      aacObt:   obtH  !== null ? obtH  : (ex?.aacObt  ?? null),
-      apt:  ex?.apt  || 'em_analise',
-      bib:  ex?.bib  || 'pendente',
-      obs:  ex?.obs  || '',
-      upd:  Date.now(),
-    };
+    if (exF) { apagarFormados.push(id); nMovidos++; changes.push([id, nome, 'situacao', 'Formado', 'Formando']); }
+    alunosOut.push({
+      ...(exS || {}), ...base, arq: false,
+      doc: newDoc, etapa: newEtapa, aac: newAac,
+      aacSaldo: saldo !== null ? saldo : (exS?.aacSaldo ?? null),
+      aacExig:  exigH !== null ? exigH : (exS?.aacExig ?? null),
+      aacObt:   obtH  !== null ? obtH  : (exS?.aacObt  ?? null),
+      apt: newApt, bib: exS?.bib || 'pendente',
+      obs: exS?.obs || exF?.obs || '',
+      cat: catImp, grupo, ocorr, cadColacao: cad,
+      consep: exS?.consep || (detectaConsep ? 'solicitar' : ''),
+      consepInfo: exS?.consepInfo || '',
+    });
   });
 
-  if (toWrite.length===0) { updatePreview(); return; }
+  if (!alunosOut.length && !formadosOut.length) { updatePreview(); return; }
 
   showStep(3);
-  const fill  = document.getElementById('progress-fill');
+  const fill = document.getElementById('progress-fill');
   const label = document.getElementById('progress-label');
+  const total = alunosOut.length + formadosOut.length + arquivarAlunos.length + apagarFormados.length;
+  let done = 0;
+  const avanca = n => { done += n; fill.style.width = Math.round(done / Math.max(total, 1) * 100) + '%'; label.textContent = `Importando… ${done} / ${total}`; };
+  const lotes = (lista, fn) => (async () => { for (let i = 0; i < lista.length; i += 100) { const ch = lista.slice(i, i + 100); await Promise.all(ch.map(fn)); avanca(ch.length); } })();
 
   if (dbCap) {
-    const CHUNK=100; let done=0;
-    for (let i=0;i<toWrite.length;i+=CHUNK) {
-      const chunk=toWrite.slice(i,i+CHUNK);
-      await Promise.all(chunk.map(s=>dbCap.doc(`${col}/${s.id}`).set(s)));
-      done+=chunk.length;
-      const pct=Math.round(done/toWrite.length*100);
-      fill.style.width=pct+'%';
-      label.textContent=`Importando… ${done} / ${toWrite.length}`;
-    }
+    await lotes(alunosOut, s => dbCap.doc(`students/${s.id}`).set(s));
+    await lotes(formadosOut, s => dbCap.doc(`formados/${s.id}`).set(s));
+    await lotes(arquivarAlunos, s => dbCap.doc(`students/${s.id}`).update({ arq: true, arqTs: now0, arqMotivo: 'colou grau', upd: now0 }));
+    await lotes(apagarFormados, id => dbCap.doc(`formados/${id}`).delete());
   } else {
-    toWrite.forEach(s=>map.set(s.id,s));
-    fill.style.width='100%'; label.textContent='Concluído';
-    if (!isF) { saveLS(); renderAll(); }
-    else renderFormados();
+    alunosOut.forEach(s => students.set(s.id, s));
+    formadosOut.forEach(s => formados.set(s.id, s));
+    arquivarAlunos.forEach(s => { s.arq = true; s.arqMotivo = 'colou grau'; });
+    apagarFormados.forEach(id => formados.delete(id));
+    fill.style.width = '100%'; label.textContent = 'Concluído';
+    saveLS(); renderAll(); renderFormados();
   }
 
-  // arquivar quem não está no arquivo
+  // arquivar quem não está no arquivo, só dentro da mesma base
   let arquivados = 0;
   const syncChk = document.getElementById('imp-sync-chk');
-  if (!isF && syncChk && syncChk.checked && !document.getElementById('imp-sync').hidden) {
-    const ids = new Set(toWrite.map(s => s.id));
-    const fora = activeStudents().filter(s => !ids.has(s.id));
-    const now = Date.now();
-    label.textContent = `Arquivando ${fora.length} alunos fora da base…`;
-    for (let i=0;i<fora.length;i+=100) {
-      const chunk = fora.slice(i,i+100);
-      if (dbCap) await Promise.all(chunk.map(s => dbCap.doc(`students/${s.id}`).update({arq:true, arqTs:now, upd:now})));
-      chunk.forEach(s => { s.arq = true; s.arqTs = now; changes.push([s.id, s.nome||s.id, 'arq', false, true]); });
+  if (syncChk && syncChk.checked && !document.getElementById('imp-sync').hidden) {
+    const ids = new Set([...alunosOut, ...formadosOut].map(s => s.id));
+    const fora = foraDaBase(ids, origem);
+    label.textContent = `Arquivando ${fora.length} alunos fora desta base…`;
+    for (let i = 0; i < fora.length; i += 100) {
+      const chunk = fora.slice(i, i + 100);
+      if (dbCap) await Promise.all(chunk.map(s => dbCap.doc(`students/${s.id}`).update({ arq: true, arqTs: now0, upd: now0 })));
+      chunk.forEach(s => { s.arq = true; s.arqTs = now0; changes.push([s.id, s.nome || s.id, 'arq', false, true]); });
     }
     arquivados = fora.length;
     if (!dbCap) { saveLS(); renderAll(); }
   }
 
-  const noun = isF ? 'formado' : 'aluno';
-  const whoImp = `${currentUser||'Equipe'} (importação)`;
-  for (let i=0;i<changes.length;i+=100)
-    await Promise.all(changes.slice(i,i+100).map(([sid,sn,f,from,to]) => logActivity(sid, sn, f, from, to, 'students', whoImp)));
-  const nMud = changes.filter(c => c[2] !== 'arq').length;
-  const resumoImp = `${toWrite.length} ${noun}${toWrite.length!==1?'s':''}` + (isF ? '' : `, ${novos} novo${novos!==1?'s':''}, ${nMud} mudança${nMud!==1?'s':''} de status` + (arquivados ? `, ${arquivados} arquivado${arquivados!==1?'s':''} por não estar${arquivados!==1?'em':''} no arquivo` : ''));
-  await logActivity('', isF ? 'Formados' : 'Prováveis formandos', 'import', '', resumoImp, isF ? 'formados' : 'students', currentUser||'Equipe');
+  const whoImp = `${currentUser || 'Equipe'} (importação)`;
+  for (let i = 0; i < changes.length; i += 100)
+    await Promise.all(changes.slice(i, i + 100).map(([sid, sn, f, from, to]) => logActivity(sid, sn, f, from, to, 'students', whoImp)));
+  const nMud = changes.filter(c => c[2] !== 'arq' && c[2] !== 'situacao').length;
+  const pl = (n, a, b) => `${n} ${n !== 1 ? b : a}`;
+  const resumoImp = `base "${origem || 'Base original'}": ${pl(nFormandos, 'formando', 'formandos')}, ${pl(nFormados, 'formado', 'formados')}, ${pl(novos, 'novo', 'novos')}, ${pl(nMud, 'mudança de status', 'mudanças de status')}` +
+    (nMovidos ? `, ${pl(nMovidos, 'aluno mudou', 'alunos mudaram')} de aba` : '') + (arquivados ? `, ${pl(arquivados, 'arquivado', 'arquivados')}` : '');
+  await logActivity('', 'Importação', 'import', '', resumoImp, 'students', currentUser || 'Equipe');
   document.getElementById('success-msg').textContent =
-    `${toWrite.length} ${noun}${toWrite.length!==1?'s':''} importado${toWrite.length!==1?'s':''} com sucesso.` + (isF ? '' : ` ${novos} novo${novos!==1?'s':''} e ${nMud} mudança${nMud!==1?'s':''} de status registradas no histórico.` + (arquivados ? ` ${arquivados} aluno${arquivados!==1?'s':''} fora da base ${arquivados!==1?'foram arquivados':'foi arquivado'} (filtro Base > Arquivados).` : ''));
+    `Importação concluída. ${pl(nFormandos, 'formando', 'formandos')} (aba ${catImp === 'anteriores' ? 'Formandos de semestres anteriores' : 'Prováveis Formandos'}) e ${pl(nFormados, 'formado', 'formados')} (aba Formados). ` +
+    `${pl(novos, 'novo', 'novos')}, ${pl(nMud, 'mudança de status', 'mudanças de status')}` + (nMovidos ? `, ${pl(nMovidos, 'aluno mudou', 'alunos mudaram')} de aba` : '') + (arquivados ? `, ${pl(arquivados, 'arquivado', 'arquivados')}` : '') + '.';
   showStep(4);
 }
 
@@ -2856,10 +2991,10 @@ async function clearAllData() {
 
 /* ── EXPORT CSV ── */
 async function exportCSV() {
-  const rows=activeStudents().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  const rows=viewStudents().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   if (rows.length===0) { showToast('Nenhum dado para exportar'); return; }
 
-  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Saldo de horas AAC','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
+  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Saldo de horas AAC','Consep','Situação no livro','Base','Grupo','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
   const docMap={pendente:'Pendente',entregue:'Entregue',regularizado:'Regularizado'};
   const aacMap={pendente:'Pendente',regularizado:'Regularizado',dispensado:'Dispensado'};
   const aptMap={em_analise:'Em análise',apto:'Apto',nao_apto:'Não apto'};
@@ -2874,6 +3009,10 @@ async function exportCSV() {
       cc(docMap[s.doc]||s.doc||''),
       cc(aacMap[s.aac]||s.aac||''),
       cc(s.aacSaldo ?? ''),
+      cc(({solicitar:'A solicitar',solicitado:'Solicitado',ajustado:'Ajustado'})[s.consep]||''),
+      cc(livroTxt(s)),
+      cc(origemDe(s)),
+      cc(CAT_LBL[catDe(s)]),
       cc(aptMap[s.apt]||s.apt||''),
       cc(bibMap[s.bib||'pendente']||s.bib||''),
       cc(s.resp||''),
@@ -2996,10 +3135,10 @@ function fieldLabel(f) {
   if (f && f.startsWith('crit.')) { const c = CRIT_DEF.find(x => x.k === f.slice(5)); return 'Critério ' + (c ? c.short : f.slice(5)); }
   if (f && f.startsWith('docchk.')) return 'Doc. conferido: ' + (DOC_SHORT[f.slice(7)] || f.slice(7));
   return {doc:'Documentação', aac:'AAC', apt:'Aptidão', obs:'Observação', bib:'Biblioteca', cerCon:'Cerimônia',
-          etapa:'Etapa Digitaliza', arq:'Base', resp:'Responsável', fluxo:'Fluxo', ingTipo:'Forma de ingresso', nextStep:'Próximo passo'}[f] || f;
+          etapa:'Etapa Digitaliza', cat:'Grupo', consep:'Consep', consepInfo:'Consep (detalhe)', situacao:'Situação do aluno', arq:'Base', resp:'Responsável', fluxo:'Fluxo', ingTipo:'Forma de ingresso', nextStep:'Próximo passo'}[f] || f;
 }
 function valLabel(field, v) {
-  if (field === 'obs' || field === 'nextStep' || field === 'resp') return v ? `"${String(v).slice(0,40)}${String(v).length>40?'…':''}"` : '(vazio)';
+  if (field === 'obs' || field === 'nextStep' || field === 'resp' || field === 'consepInfo') return v ? `"${String(v).slice(0,40)}${String(v).length>40?'…':''}"` : '(vazio)';
   if (field === 'etapa') return ETAPA_LBL[v||''] || v;
   if (field === 'arq') return (v===true||v==='true') ? 'Arquivado' : 'Ativo';
   if (field === 'fluxo') return ({regular:'Regular',antecipada:'Antecipada',especial:'Especial'})[v] || 'Regular';
@@ -3009,7 +3148,7 @@ function valLabel(field, v) {
   const map = {
     pendente:'Pendente', entregue:'Entregue', regularizado:'Regularizado',
     dispensado:'Dispensado', em_analise:'Em análise', apto:'Apto', nao_apto:'Não apto',
-    solicitado:'Solicitado', ok:'OK',
+    provaveis:'Prováveis formandos', anteriores:'Formandos de semestres anteriores', solicitado:'Solicitado', ok:'OK', solicitar:'A solicitar', ajustado:'Ajustado', colou:'Colou grau',
     confirmado:'Confirmado', nao_participa:'Não participa',
   };
   return map[v] || v || '—';
@@ -3199,11 +3338,11 @@ function renderFormados() {
     formados.size > 0 ? `${filtered.length} de ${formados.size} formado${formados.size!==1?'s':''}` : '';
 
   if (formados.size === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><p>Nenhum formado cadastrado ainda.</p><p>Clique em <strong>+ Importar formados</strong> para começar.</p></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><p>Nenhum formado cadastrado ainda.</p><p>Clique em <strong>+ Importar formados</strong> para começar.</p></td></tr>`;
     return;
   }
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><p>Nenhum formado corresponde ao filtro aplicado.</p></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><p>Nenhum formado corresponde ao filtro aplicado.</p></td></tr>`;
     return;
   }
 
@@ -3214,7 +3353,8 @@ function renderFormados() {
       <td class="td-mat">${esc(s.mat||'')}</td>
       <td class="td-curso" title="${esc(s.curso||'')}">${esc(s.curso||'')}</td>
       <td class="td-turno">${esc(s.turno||'')||'<span style="color:var(--faint)">—</span>'}</td>
-      <td>${makeSelect(id,'cerCon',s.cerCon||'pendente',[['pendente','Aguardando'],['confirmado','Confirmado'],['nao_participa','Não participa']],'formados')}</td>
+      <td class="td-turno">${esc(livroTxt(s))||'<span style="color:var(--faint)">—</span>'}</td>
+      <td>${makeSelect(id,'cerCon',s.cerCon||'pendente',[['colou','Colou grau'],['pendente','Aguardando'],['confirmado','Confirmado'],['nao_participa','Não participa']],'formados')}</td>
       <td class="td-obs"><span class="obs-span" onclick="editObs(this,'${esc(id)}','formados')">${s.obs?esc(s.obs):'<span class="obs-empty">—</span>'}</span></td>
     </tr>`;
   }).join('');
@@ -3288,6 +3428,7 @@ function showToast(msg) {
 ════════════════════════════════════════════ */
 const ETAPA_OPTS = [['','Não conferido'],['sem_processo','Sem processo'],['2.0','2.0 Doc. pendente'],['2.1','2.1 Revisão CSC'],['3.0','3.0 Doc. aprovada']];
 const ETAPA_LBL = Object.fromEntries(ETAPA_OPTS);
+const CONSEP_OPTS = [['','Sem Consep'],['solicitar','A solicitar'],['solicitado','Solicitado'],['ajustado','Ajustado']];
 const FLUXO_OPTS = [['regular','Regular'],['antecipada','Antecipada'],['especial','Especial']];
 const CRIT_DEF = [
   {k:'hist',   short:'disciplinas',    label:'Aprovado em todas as disciplinas', where:'SIA: Histórico Escolar'},
@@ -3318,6 +3459,12 @@ function requireUser(){
   return false;
 }
 
+function colacaoChip(s){
+  const hoje = todayStr();
+  if (s.colacaoData && s.colacaoData >= hoje) return `<span class="aac-h" style="color:var(--navy)">Colação em ${fmtDate(s.colacaoData)}</span>`;
+  if (/aguardando/i.test(s.livro||'')) return `<span class="aac-h" style="color:var(--navy)">Aguardando data de colação</span>`;
+  return '';
+}
 function critVal(s,k){
   if (k==='aac')  return (s.aac==='regularizado'||s.aac==='dispensado') ? 'ok' : 'pend';
   if (k==='docs') return (s.doc==='regularizado'||s.etapa==='3.0') ? 'ok' : 'pend';
@@ -3340,6 +3487,10 @@ function alertsOf(s){
 }
 
 function nextAction(s){
+  if (s.consep === 'solicitar') return {lvl:'danger', text:'Forma de ingresso incorreta (Consep). Solicitar o ajuste ao regulatório.',
+    help:'Abra o pedido ao regulatório pedindo a correção da forma de ingresso. Informe a forma correta e o protocolo no campo Consep da ficha e mude a situação para Solicitado. Enquanto não for ajustado, a documentação e o diploma ficam travados.'};
+  if (s.consep === 'solicitado') return {lvl:'warn', text:'Ajuste de ingresso (Consep) solicitado. Cobrar o retorno do regulatório.',
+    help:'Acompanhe o protocolo informado na ficha. Quando o regulatório concluir, mude a situação do Consep para Ajustado e confira a lista de documentos pela nova forma de ingresso.'};
   if (s.apt === 'apto') return {lvl:'ok', text:'Aluno apto. Acompanhar a data da colação e comunicar dia e horário da cerimônia.',
     help:'Depois da colação, confira no SIA (Cadastro de Alunos > Validação para Colação/Diplomação) se a presença foi registrada. O diploma digital chega por e-mail em até 60 dias.'};
   if (s.apt === 'nao_apto') return {lvl:'danger', text:'Aluno não apto. Comunicar o motivo do impedimento e o que falta para regularizar.',
@@ -3534,12 +3685,16 @@ function drawerLiveHTML(s){
       <div class="d-field"><label>AAC</label>${makeSelect(s.id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}${aacHorasHtml(s)}${(s.aacExig!=null&&s.aacObt!=null)?`<small style="display:block;color:var(--muted);margin-top:2px">Exigidas ${s.aacExig} h · obtidas ${s.aacObt} h</small>`:''}</div>
       <div class="d-field"><label>Aptidão</label>${makeSelect(s.id,'apt',s.apt||'em_analise',[['em_analise','Em análise'],['apto','Apto'],['nao_apto','Não apto']])}</div>
       <div class="d-field"><label>Biblioteca (controle interno)</label>${makeSelect(s.id,'bib',s.bib||'pendente',[['pendente','Pendente'],['solicitado','Solicitado'],['ok','OK']])}</div>
+      <div class="d-field"><label>Consep (ajuste da forma de ingresso)</label>${makeSelect(s.id,'consep',s.consep||'',CONSEP_OPTS)}</div>
+      ${s.consep ? `<div class="d-field" style="grid-column:1/-1"><label for="dr-consep">Consep: forma de ingresso correta e protocolo</label>
+        <input id="dr-consep" class="d-input" value="${esc(s.consepInfo||'')}" placeholder="Ex.: ingresso correto MSV, protocolo 12345" onchange="setDrawerField('consepInfo',this.value.trim())"></div>` : ''}
       <div class="d-field"><label>Fluxo de colação</label><select class="d-input" onchange="setDrawerField('fluxo',this.value)">${opt(FLUXO_OPTS,fluxo)}</select></div>
       <div class="d-field" style="grid-column:1/-1"><label for="dr-resp">Responsável pelo aluno</label>
         <input id="dr-resp" class="d-input" list="dr-names" value="${esc(s.resp||'')}" placeholder="Nome de quem acompanha este aluno" onchange="setDrawerField('resp',this.value.trim())">
         <datalist id="dr-names">${names}</datalist></div>
     </div>
     ${fluxoNote}
+    ${(s.livro||s.ocorr||s.cadColacao||s.grupo) ? `<p class="d-note">${[s.grupo?'Grupo na base: '+esc(s.grupo):'', livroTxt(s)?'No livro: '+esc(livroTxt(s)):'', s.cadColacao?'Cadastro de colação: '+esc(s.cadColacao):'', s.ocorr?'Ocorrência: '+esc(s.ocorr):'', s.origem?'Base: '+esc(s.origem):''].filter(Boolean).join(' · ')}</p>` : ''}
   </section>
 
   <section class="d-sec" style="margin-top:14px">
