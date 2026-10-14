@@ -6,7 +6,15 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Painel Formandos</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#003B71">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Formandos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="alternate icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
 <style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style>
 <!-- v5: armazenamento em Google Apps Script + Planilha, sincronização entre atendentes -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
@@ -546,6 +554,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
       <span class="sync-dot"></span>
       <span id="sync-text">Conectando…</span>
     </span>
+    <button class="btn btn-ghost" id="btn-install" hidden onclick="instalarApp()" title="Instalar como aplicativo neste computador ou celular">⬇ Instalar app</button>
     <button class="btn btn-ghost" id="btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
     <button class="btn btn-ghost" id="btn-export-formados" hidden onclick="exportCSVFormados()">↓ Exportar CSV</button>
     <button class="btn btn-danger-ghost admin-only" id="btn-clear" onclick="confirmClear()">Limpar dados</button>
@@ -3638,6 +3647,16 @@ async function enadeAplicar(){
   closeEnade(); renderAll(); refreshDrawer(true);
   showToast(resumo.join('. '));
 }
+
+
+/* ── APP INSTALÁVEL (PWA) ── */
+let pwaEvt = null;
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('[sw]', e)));
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); pwaEvt = e; const b = document.getElementById('btn-install'); if (b) b.hidden = false; });
+window.addEventListener('appinstalled', () => { pwaEvt = null; const b = document.getElementById('btn-install'); if (b) b.hidden = true; showToast('App instalado'); });
+async function instalarApp(){ if (!pwaEvt) return; pwaEvt.prompt(); try { await pwaEvt.userChoice; } catch(e){} pwaEvt = null; document.getElementById('btn-install').hidden = true; }
 
 /* ── UTILS ── */
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
