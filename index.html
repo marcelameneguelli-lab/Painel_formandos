@@ -550,6 +550,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
     <button class="btn btn-ghost" id="btn-export-formados" hidden onclick="exportCSVFormados()">↓ Exportar CSV</button>
     <button class="btn btn-danger-ghost admin-only" id="btn-clear" onclick="confirmClear()">Limpar dados</button>
     <button class="btn btn-primary admin-only" id="btn-import" onclick="openImportAlunos()">+ Importar alunos</button>
+    <button class="btn btn-ghost admin-only" id="btn-enade" onclick="openEnade()">ENADE</button>
     <button class="btn btn-primary admin-only" id="btn-import-formados" hidden onclick="openImportFormados()">+ Importar formados</button>
     <button class="user-pill" id="user-pill" onclick="openUserModal()" title="Ver quem está conectado ou sair deste computador">
       <span class="user-avatar" id="user-avatar">?</span>
@@ -649,6 +650,15 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
       <option value="solicitado">Solicitado</option>
       <option value="ajustado">Ajustado</option>
     </select>
+    <select class="filter-select" id="f-enade" onchange="applyFilters()">
+      <option value="all">ENADE: Todos</option>
+      <option value="irr25">Irregular no ENADE 2025</option>
+      <option value="reg25">Regular no ENADE 2025</option>
+      <option value="insc26">Inscrito no ENADE 2026</option>
+      <option value="qe26">Inscrito 2026 sem questionário</option>
+      <option value="irr25_insc26">Irregular 2025 e inscrito 2026</option>
+      <option value="sem">Sem registro de ENADE</option>
+    </select>
     <select class="filter-select" id="f-origem" onchange="applyFilters()">
       <option value="all">Base: Todas</option>
     </select>
@@ -697,6 +707,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
           <th>Turno</th>
           <th>Forma de Ingresso</th>
           <th>Etapa Digitaliza</th>
+          <th>ENADE</th>
           <th>Documentação</th>
           <th>AAC</th>
           <th>Aptidão</th>
@@ -708,7 +719,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
         </tr>
       </thead>
       <tbody id="student-tbody">
-        <tr><td colspan="16" class="empty-state">
+        <tr><td colspan="17" class="empty-state">
           <p>Nenhum aluno cadastrado ainda.</p>
           <p>Clique em <strong>+ Importar alunos</strong> para começar.</p>
         </td></tr>
@@ -1249,6 +1260,30 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
     <div class="modal-footer">
       <button class="btn btn-ghost-dark" onclick="closeSemModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSem()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ENADE ── -->
+<div id="enade-modal" hidden class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Importar ENADE</h2>
+      <button class="modal-close" onclick="closeEnade()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Envie as planilhas do ENADE (2025 e 2026). O painel descobre o ano pelas colunas e cruza pela matrícula com os alunos das abas Prováveis Formandos e Formandos de semestres anteriores. Nenhum outro dado do aluno é alterado.</p>
+      <label class="file-drop" style="display:block;cursor:pointer;padding:18px;text-align:center;border:2px dashed var(--border,#ccd);border-radius:10px">
+        <input type="file" id="enade-file" accept=".xlsx,.xls,.csv" multiple hidden onchange="enadeArquivos(this.files); this.value=''">
+        <span>Clique para escolher um ou dois arquivos</span>
+      </label>
+      <div id="enade-list" style="margin-top:12px"></div>
+      <label id="enade-limpa-wrap" hidden style="display:none;margin-top:10px;font-size:13px"><input type="checkbox" id="enade-limpa" checked> Remover a marcação de ENADE do mesmo ano de quem não está no arquivo (use quando o arquivo for a lista completa)</label>
+      <p id="enade-err" class="imp-err" hidden style="color:var(--danger-c);margin-top:8px"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost-dark" onclick="closeEnade()">Cancelar</button>
+      <button class="btn btn-primary" id="enade-apply" onclick="enadeAplicar()" disabled>Aplicar</button>
     </div>
   </div>
 </div>
@@ -2187,6 +2222,7 @@ function getFiltered() {
   const resp  = document.getElementById('f-resp').value;
   const consep = document.getElementById('f-consep').value;
   const origem = document.getElementById('f-origem').value;
+  const fen = document.getElementById('f-enade').value;
   const acomp = document.getElementById('f-acomp').value;
   const hoje  = todayStr();
   const em7   = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
@@ -2206,6 +2242,7 @@ function getFiltered() {
     if (consep === 'aberto' && !(s.consep === 'solicitar' || s.consep === 'solicitado')) return false;
     if (consep !== 'all' && consep !== 'aberto' && (s.consep||'') !== consep) return false;
     if (origem !== 'all' && origemDe(s) !== origem) return false;
+    if (fen !== 'all' && !enadeMatch(s, fen)) return false;
     if (etapa !== 'all' && (s.etapa||'') !== etapa) return false;
     if (resp === '__none' && s.resp) return false;
     if (resp !== 'all' && resp !== '__none' && s.resp !== resp) return false;
@@ -2230,11 +2267,11 @@ function renderTable() {
     students.size > 0 ? `${filtered.length} de ${viewStudents().length} aluno${viewStudents().length!==1?'s':''} ativos` + (students.size>activeStudents().length ? `, ${students.size-activeStudents().length} arquivados no total` : '') : '';
 
   if (viewStudents().length === 0 && ![...students.values()].some(s => s.arq && catDe(s) === viewCat)) {
-    tbody.innerHTML = `<tr><td colspan="16" class="empty-state"><p>Nenhum aluno neste grupo ainda.</p><p>Clique em <strong>+ Importar alunos</strong> e escolha o grupo da base.</p></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="17" class="empty-state"><p>Nenhum aluno neste grupo ainda.</p><p>Clique em <strong>+ Importar alunos</strong> e escolha o grupo da base.</p></td></tr>`;
     return;
   }
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="16" class="empty-state"><p>Nenhum aluno corresponde ao filtro aplicado.</p></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="17" class="empty-state"><p>Nenhum aluno corresponde ao filtro aplicado.</p></td></tr>`;
     return;
   }
 
@@ -2256,6 +2293,7 @@ function renderTable() {
       <td class="td-turno">${esc(s.turno||'') || dash}</td>
       <td class="td-ingresso" title="${esc(s.ingresso||'')}">${esc(s.ingresso||'') || dash}</td>
       <td>${makeSelect(id,'etapa',s.etapa||'',ETAPA_OPTS)}</td>
+      <td class="td-enade">${enadeCell(s)}</td>
       <td>${makeSelect(id,'doc',s.doc||'pendente',[['pendente','Pendente'],['entregue','Entregue'],['regularizado','Regularizado']])}</td>
       <td>${makeSelect(id,'aac',s.aac||'pendente',[['pendente','Pendente'],['regularizado','Regularizado'],['dispensado','Dispensado']])}${aacHorasHtml(s)}</td>
       <td>${makeSelect(id,'apt',s.apt||'em_analise',[['em_analise','Em análise'],['apto','Apto'],['nao_apto','Não apto']])}</td>
@@ -2994,7 +3032,7 @@ async function exportCSV() {
   const rows=viewStudents().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   if (rows.length===0) { showToast('Nenhum dado para exportar'); return; }
 
-  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Saldo de horas AAC','Consep','Situação no livro','Base','Grupo','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
+  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Saldo de horas AAC','Consep','ENADE 2025','ENADE 2026','Situação no livro','Base','Grupo','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
   const docMap={pendente:'Pendente',entregue:'Entregue',regularizado:'Regularizado'};
   const aacMap={pendente:'Pendente',regularizado:'Regularizado',dispensado:'Dispensado'};
   const aptMap={em_analise:'Em análise',apto:'Apto',nao_apto:'Não apto'};
@@ -3010,6 +3048,7 @@ async function exportCSV() {
       cc(aacMap[s.aac]||s.aac||''),
       cc(s.aacSaldo ?? ''),
       cc(({solicitar:'A solicitar',solicitado:'Solicitado',ajustado:'Ajustado'})[s.consep]||''),
+      cc(enadeTxt25(s)), cc(enadeTxt26(s)),
       cc(livroTxt(s)),
       cc(origemDe(s)),
       cc(CAT_LBL[catDe(s)]),
@@ -3410,6 +3449,179 @@ function saveSem() {
   showToast('Semestre atualizado para ' + val);
 }
 
+/* ════════════════════════════════════════════
+   ENADE: 2025 (regularidade) e 2026 (inscrição)
+   s.e25: 'irregular'|'regular'|'naoinsc'  s.e25sit, s.e25com
+   s.e26: 'inscrito'  s.e26tipo, s.e26qe ('Preenchido'|'Não preenchido'), s.e26mun
+════════════════════════════════════════════ */
+function enadePendente(s){ return s.e25 === 'irregular' || s.e26 === 'inscrito'; }
+function enadeTxt25(s){ return ({irregular:'Irregular',regular:'Regular',naoinsc:'Não inscrito como concluinte'})[s.e25] || ''; }
+function enadeTxt26(s){ return s.e26 === 'inscrito' ? 'Inscrito' + (s.e26qe ? ', questionário ' + s.e26qe.toLowerCase() : '') : ''; }
+function enadeMatch(s, f){
+  const irr = s.e25 === 'irregular', insc = s.e26 === 'inscrito';
+  switch (f) {
+    case 'irr25': return irr;
+    case 'reg25': return s.e25 === 'regular';
+    case 'insc26': return insc;
+    case 'qe26': return insc && s.e26qe !== 'Preenchido';
+    case 'irr25_insc26': return irr && insc;
+    case 'sem': return !s.e25 && !s.e26;
+  }
+  return true;
+}
+function enadeCell(s){
+  const out = [];
+  if (s.e25 === 'irregular') out.push('<span class="aac-h" style="color:var(--danger-c)" title="'+esc(s.e25sit||'')+'">2025 irregular</span>');
+  else if (s.e25 === 'regular') out.push('<span class="aac-h" style="color:var(--faint)" title="'+esc(s.e25sit||'')+'">2025 regular</span>');
+  else if (s.e25 === 'naoinsc') out.push('<span class="aac-h" style="color:var(--faint)">2025 não inscrito</span>');
+  if (s.e26 === 'inscrito') {
+    const ok = s.e26qe === 'Preenchido';
+    out.push('<span class="aac-h" style="color:'+(ok?'var(--navy)':'var(--p1)')+'" title="'+esc(s.e26tipo||'')+'">2026 inscrito'+(ok?'':', questionário pendente')+'</span>');
+  }
+  return out.length ? out.join('') : '<span style="color:var(--faint)">—</span>';
+}
+function enadeDetalhe(s){
+  const l = [];
+  if (s.e25) l.push('ENADE 2025: ' + enadeTxt25(s).toLowerCase() + (s.e25sit ? ' (' + s.e25sit + ')' : '') + (s.e25com ? '. Comunicado: ' + s.e25com : ''));
+  if (s.e26 === 'inscrito') l.push('ENADE 2026: inscrito' + (s.e26tipo ? ' como ' + s.e26tipo : '') + (s.e26qe ? ', questionário do estudante ' + s.e26qe.toLowerCase() : '') + (s.e26mun ? ', prova em ' + s.e26mun : ''));
+  return l.length ? '<span class="crit-where" style="color:var(--navy);font-weight:600">' + l.map(esc).join('<br>') + '</span>' : '';
+}
+
+let enadeArqs = [];   // [{nome, ano, linhas:[{mat,nome,...}], achados, formados, fora:[...]}]
+function openEnade(){
+  if (!exigirAdmin()) return;
+  enadeArqs = []; enadeRender();
+  document.getElementById('enade-err').hidden = true;
+  document.getElementById('enade-modal').hidden = false;
+}
+function closeEnade(){ document.getElementById('enade-modal').hidden = true; }
+function enadeErr(m){ const e = document.getElementById('enade-err'); e.textContent = m || ''; e.hidden = !m; }
+
+function enadeLerArquivo(file){
+  return new Promise((ok, no) => {
+    const r = new FileReader();
+    r.onerror = () => no(new Error('Erro ao ler ' + file.name));
+    r.onload = e => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:false});
+        let grid = [];
+        for (const n of wb.SheetNames) {
+          const ws = wb.Sheets[n];
+          if (!ws || !ws['!ref']) continue;
+          const keys = Object.keys(ws).filter(k => k[0] !== '!');
+          const rng = XLSX.utils.decode_range(ws['!ref']);
+          keys.forEach(k => { const c = XLSX.utils.decode_cell(k); if (c.r>rng.e.r) rng.e.r=c.r; if (c.c>rng.e.c) rng.e.c=c.c; });
+          ws['!ref'] = XLSX.utils.encode_range(rng);
+          grid = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:'', blankrows:false});
+          if (grid.length > 1) break;
+        }
+        ok(grid.map(r => r.map(cellTxt)));
+      } catch(err) { no(new Error('Não foi possível ler ' + file.name)); }
+    };
+    r.readAsArrayBuffer(file);
+  });
+}
+
+function enadeInterpreta(nome, grid){
+  let hi = grid.findIndex(r => r.some(c => normTxt(c).trim() === 'matricula'));
+  if (hi < 0) throw new Error(nome + ': não encontrei a coluna Matricula.');
+  const hdr = grid[hi].map(c => normTxt(c).trim());
+  const col = (...pre) => hdr.findIndex(h => pre.some(p => h.startsWith(p)));
+  const iMat = col('matricula'), iNome = col('nome do estudante');
+  const iReg = col('regularidade'), iSit = col('situacao da participacao'), iCom = col('foi comunicado');
+  const iTipo = col('tipo de inscri'), iQE = col('preenchimento do questionario do estudante');
+  const iMun = hdr.findIndex(h => h.startsWith('municipio de prova') || h.startsWith('municipio do polo'));
+  const ano = iReg >= 0 ? 2025 : (col('periodo (ap)') >= 0 || col('municipio de prova') >= 0 ? 2026 : 0);
+  if (!ano) throw new Error(nome + ': não reconheci se é o ENADE 2025 ou 2026.');
+  const linhas = [];
+  grid.slice(hi + 1).forEach(r => {
+    const mat = (r[iMat] || '').trim(); if (!mat || !/\d/.test(mat)) return;
+    const o = { id: sanitizeId(mat), mat, nome: iNome >= 0 ? r[iNome] : '', tipo: iTipo >= 0 ? r[iTipo] : '' };
+    if (ano === 2025) {
+      const reg = normTxt(r[iReg]).trim();
+      o.e25 = reg === 'nao' ? 'irregular' : reg === 'sim' ? 'regular' : 'naoinsc';
+      o.e25sit = iSit >= 0 ? r[iSit] : ''; o.e25com = iCom >= 0 ? r[iCom] : '';
+    } else {
+      o.e26 = 'inscrito'; o.e26tipo = o.tipo;
+      o.e26qe = iQE >= 0 ? (/^n[aã]o/i.test(r[iQE]) ? 'Não preenchido' : (r[iQE] ? 'Preenchido' : '')) : '';
+      o.e26mun = iMun >= 0 ? r[iMun] : '';
+    }
+    linhas.push(o);
+  });
+  const ids = new Set(), unicas = [];
+  linhas.forEach(l => { if (!ids.has(l.id)) { ids.add(l.id); unicas.push(l); } });
+  const achados = unicas.filter(l => students.has(l.id)), jaFormados = unicas.filter(l => !students.has(l.id) && formados.has(l.id));
+  const fora = unicas.filter(l => !students.has(l.id) && !formados.has(l.id));
+  return { nome, ano, linhas: unicas, achados, jaFormados, fora };
+}
+
+async function enadeArquivos(files){
+  enadeErr('');
+  for (const f of [...files]) {
+    try {
+      const a = enadeInterpreta(f.name, await enadeLerArquivo(f));
+      enadeArqs = enadeArqs.filter(x => x.ano !== a.ano); enadeArqs.push(a);
+    } catch(e) { enadeErr(e.message); }
+  }
+  enadeRender();
+}
+
+function enadeRender(){
+  const box = document.getElementById('enade-list');
+  box.innerHTML = enadeArqs.sort((a,b)=>a.ano-b.ano).map(a => {
+    const irr = a.ano === 2025 ? a.achados.filter(l => l.e25 === 'irregular').length : 0;
+    const qe = a.ano === 2026 ? a.achados.filter(l => l.e26qe !== 'Preenchido').length : 0;
+    const det = a.ano === 2025
+      ? `${irr} irregular${irr!==1?'es':''} entre os alunos do painel`
+      : `${a.achados.length} inscrito${a.achados.length!==1?'s':''} no painel, ${qe} sem questionário do estudante`;
+    const fora = a.fora.length ? `<details style="margin-top:4px"><summary style="cursor:pointer">${a.fora.length} fora do painel</summary><div style="max-height:120px;overflow:auto;font-size:12px">${a.fora.map(l=>esc(l.mat+' '+l.nome)).join('<br>')}</div></details>` : '';
+    return `<div style="border:1px solid var(--border,#dde);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <strong>ENADE ${a.ano}</strong> <span style="color:var(--faint)">(${esc(a.nome)})</span><br>
+      ${a.linhas.length} alunos no arquivo, ${a.achados.length} encontrados nas abas de formandos${a.jaFormados.length?`, ${a.jaFormados.length} já na aba Formados (ignorados)`:''}.<br>${det}.${fora}</div>`;
+  }).join('');
+  const w = document.getElementById('enade-limpa-wrap');
+  w.hidden = !enadeArqs.length; w.style.display = enadeArqs.length ? 'block' : 'none';
+  document.getElementById('enade-apply').disabled = !enadeArqs.length;
+}
+
+async function enadeAplicar(){
+  if (!exigirAdmin() || !enadeArqs.length) return;
+  const limpa = document.getElementById('enade-limpa').checked;
+  const btn = document.getElementById('enade-apply'); btn.disabled = true; btn.textContent = 'Aplicando…';
+  const now = Date.now(), jobs = [];
+  const resumo = [];
+  for (const a of enadeArqs) {
+    const campos = a.ano === 2025 ? ['e25','e25sit','e25com'] : ['e26','e26tipo','e26qe','e26mun'];
+    const noArq = new Set(a.achados.map(l => l.id));
+    let n = 0, lim = 0;
+    a.achados.forEach(l => {
+      const up = {}; campos.forEach(c => up[c] = l[c] || ''); up.upd = now;
+      jobs.push([l.id, up]); n++;
+    });
+    if (limpa) [...students.values()].forEach(s => {
+      if (noArq.has(s.id) || !s[campos[0]]) return;
+      const up = {}; campos.forEach(c => up[c] = ''); up.upd = now;
+      jobs.push([s.id, up]); lim++;
+    });
+    resumo.push(`ENADE ${a.ano}: ${n} atualizados` + (lim ? `, ${lim} marcações removidas` : '') + (a.fora.length ? `, ${a.fora.length} fora do painel` : ''));
+  }
+  try {
+    for (let i = 0; i < jobs.length; i += 100) {
+      const ch = jobs.slice(i, i + 100);
+      if (dbCap) await Promise.all(ch.map(([id, up]) => dbCap.doc(`students/${id}`).update(up)));
+      ch.forEach(([id, up]) => { const s = students.get(id); if (s) Object.assign(s, up); });
+    }
+    if (!dbCap) saveLS();
+    await logActivity('', 'ENADE', 'import', '', resumo.join('; '), 'students', currentUser || 'Equipe');
+  } catch(e) {
+    console.error('[enade]', e); enadeErr('Não foi possível salvar tudo. Tente de novo.');
+    btn.disabled = false; btn.textContent = 'Aplicar'; return;
+  }
+  btn.textContent = 'Aplicar';
+  closeEnade(); renderAll(); refreshDrawer(true);
+  showToast(resumo.join('. '));
+}
+
 /* ── UTILS ── */
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function setText(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
@@ -3477,6 +3689,10 @@ function alertsOf(s){
   if (s.nextStep && s.nextDue) {
     if (s.nextDue < hoje) a.push({lvl:'danger', t:'Prazo vencido em '+fmtDate(s.nextDue)});
     else if (s.nextDue === hoje) a.push({lvl:'warn', t:'Prazo é hoje'});
+  }
+  if (s.apt !== 'apto' && enadePendente(s)) {
+    if (s.e25 === 'irregular' && critVal(s,'enade') === 'pend') a.push({lvl:'warn', t:'ENADE 2025 irregular'});
+    if (s.e26 === 'inscrito' && s.e26qe !== 'Preenchido') a.push({lvl:'warn', t:'ENADE 2026: questionário do estudante pendente'});
   }
   if (s.apt !== 'apto') {
     const lc = lastContactOf(s);
@@ -3653,7 +3869,8 @@ function drawerLiveHTML(s){
     const ctrl = c.auto
       ? `<span class="auto-tag ${v}">${v==='ok'?'OK':'Pendente'}</span>`
       : `<div class="seg" role="group" aria-label="${esc(c.label)}">${['pend','ok','na'].map(o=>`<button type="button" class="${v===o?'on-'+o:''}" aria-pressed="${v===o}" onclick="setCrit('${c.k}','${o}')">${CRIT_VAL_LBL[o]}</button>`).join('')}</div>`;
-    return `<div class="crit-row"><div>${esc(c.label)}<span class="crit-where">${esc(c.where)}</span></div>${ctrl}</div>`;
+    const extra = c.k==='enade' ? enadeDetalhe(s) : '';
+    return `<div class="crit-row"><div>${esc(c.label)}<span class="crit-where">${esc(c.where)}</span>${extra}</div>${ctrl}</div>`;
   }).join('');
 
   const chk = s.docsChk || {};
