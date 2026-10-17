@@ -342,6 +342,25 @@ body.perfil-atendente .admin-only{display:none!important}
 .name-input:focus{border-color:var(--navy);}
 
 /* ── ACTIVITY TAB ── */
+.evo-wrap{max-width:980px;margin:0 auto;padding:24px 24px 80px}
+.evo-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.evo-tile{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.evo-num{font-size:26px;font-weight:600;color:var(--navy);line-height:1.1}
+.evo-lbl{font-size:12px;color:var(--text,#141413);margin-top:2px}
+.evo-delta{font-size:11px;color:var(--faint);margin-top:4px}
+.evo-delta.up{color:#2F7D32;font-weight:600}.evo-delta.down{color:#B91C1C;font-weight:600}
+.evo-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.evo-card h3{margin:0 0 10px;font-size:14px}
+.evo-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:6px}
+.evo-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.evo-imp{padding:8px 0;border-top:1px solid var(--border)}.evo-imp:first-of-type{border-top:0}
+.evo-imp-h{font-size:13px;margin-bottom:5px}
+.evo-chips{display:flex;gap:6px;flex-wrap:wrap}
+.evo-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.mov-chip{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:10px;color:var(--mc,#1C3B6E);background:color-mix(in srgb,var(--mc,#1C3B6E) 11%,#fff);border:1px solid color-mix(in srgb,var(--mc,#1C3B6E) 35%,#fff);margin-top:3px;white-space:nowrap}
+.mov-chip.old{opacity:.55}
+td .mov-chip{display:block;width:fit-content;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.mono{font-variant-numeric:tabular-nums}
 .activity-wrap{max-width:700px;margin:0 auto;padding:24px 24px 80px;}
 .act-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
 .act-header h2{font-size:16px;font-weight:600;}
@@ -573,6 +592,7 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
   <button class="tab-btn active" id="nav-provaveis" onclick="switchTab('alunos',this)">👥 Prováveis Formandos <span class="tab-count" id="cnt-provaveis"></span></button>
   <button class="tab-btn" id="nav-anteriores" onclick="switchTab('anteriores',this)">🗂️ Formandos de semestres anteriores <span class="tab-count" id="cnt-anteriores"></span></button>
   <button class="tab-btn" onclick="switchTab('formados',this)">🎓 Formados</button>
+  <button class="tab-btn" onclick="switchTab('evolucao',this)">📈 Evolução</button>
   <button class="tab-btn" onclick="switchTab('regua',this)">💬 Régua de Comunicação</button>
   <button class="tab-btn" onclick="switchTab('atividade',this)">📋 Atividade</button>
   <button class="tab-btn" onclick="switchTab('guia',this)">📘 Guia do processo</button>
@@ -667,6 +687,12 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
       <option value="qe26">Inscrito 2026 sem questionário</option>
       <option value="irr25_insc26">Irregular 2025 e inscrito 2026</option>
       <option value="sem">Sem registro de ENADE</option>
+    </select>
+    <select class="filter-select" id="f-mov" onchange="applyFilters()">
+      <option value="all">Movimentação: Todas</option>
+      <option value="rec">Com mudança nos últimos 14 dias</option>
+      <option value="novo">Novos na base (14 dias)</option>
+      <option value="avanco">Avanço de doc., etapa, AAC ou aptidão (14 dias)</option>
     </select>
     <select class="filter-select" id="f-origem" onchange="applyFilters()">
       <option value="all">Base: Todas</option>
@@ -771,6 +797,10 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
     <select class="filter-select" id="ff-data" onchange="applyFormadosFilters()">
       <option value="all">Data da colação: Todas</option>
     </select>
+    <select class="filter-select" id="ff-mov" onchange="applyFormadosFilters()">
+      <option value="all">Movimentação: Todas</option>
+      <option value="rec">Com mudança nos últimos 14 dias</option>
+    </select>
     <select class="filter-select" id="ff-cer" onchange="applyFormadosFilters()">
       <option value="all">Cerimônia: Todos</option>
       <option value="pendente">Aguardando</option>
@@ -858,6 +888,13 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
 </div><!-- /tab-regua -->
 
 <!-- ══ TAB: ATIVIDADE ══ -->
+<div id="tab-evolucao" class="tab-panel">
+  <div class="evo-wrap">
+    <div class="act-header"><h2>Evolução das importações</h2><span style="font-size:12px;color:var(--faint)">Cada importação de base vira um ponto. Mostra quem virou formado e quem avançou na documentação.</span></div>
+    <div id="evo-root"></div>
+  </div>
+</div>
+
 <div id="tab-atividade" class="tab-panel">
   <div class="activity-wrap">
     <div class="act-header">
@@ -1350,6 +1387,7 @@ function switchTab(id, btn) {
   document.getElementById('btn-import').hidden          = !isAlunos;
   document.getElementById('btn-import-formados').hidden = !isFormados;
   if (id === 'atividade') renderActivity();
+  if (id === 'evolucao')  renderEvolucao();
   if (id === 'formados')  renderFormados();
 }
 
@@ -2235,6 +2273,7 @@ function getFiltered() {
   const consep = document.getElementById('f-consep').value;
   const origem = document.getElementById('f-origem').value;
   const fen = document.getElementById('f-enade').value;
+  const fmov = document.getElementById('f-mov').value;
   const acomp = document.getElementById('f-acomp').value;
   const hoje  = todayStr();
   const em7   = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
@@ -2255,6 +2294,7 @@ function getFiltered() {
     if (consep !== 'all' && consep !== 'aberto' && (s.consep||'') !== consep) return false;
     if (origem !== 'all' && origemDe(s) !== origem) return false;
     if (fen !== 'all' && !enadeMatch(s, fen)) return false;
+    if (!movFiltro(s, fmov)) return false;
     if (etapa !== 'all' && (s.etapa||'') !== etapa) return false;
     if (resp === '__none' && s.resp) return false;
     if (resp !== 'all' && resp !== '__none' && s.resp !== resp) return false;
@@ -2297,7 +2337,7 @@ function renderTable() {
     const lcTxt = !lc ? 'Nunca' : d===0 ? 'Hoje' : d===1 ? 'Ontem' : `há ${d} dias`;
     const lcCls = !lc ? 'never' : (d>7 && s.apt!=='apto') ? 'late' : '';
     return `<tr>
-      <td class="td-nome"><button class="name-btn" onclick="openDrawer('${esc(id)}')" title="Abrir ficha de ${esc(s.nome||'')}"><span class="lvl-dot lvl-${lvl}"></span><span class="nb-txt">${esc(s.nome||'')}</span></button>${colacaoChip(s)}</td>
+      <td class="td-nome"><button class="name-btn" onclick="openDrawer('${esc(id)}')" title="Abrir ficha de ${esc(s.nome||'')}"><span class="lvl-dot lvl-${lvl}"></span><span class="nb-txt">${esc(s.nome||'')}</span></button>${colacaoChip(s)}${movChip(s)}</td>
       <td class="td-mat">${esc(s.mat||'')}</td>
       <td class="td-next" title="${esc(na.text)}"><span>${esc(na.text)}</span></td>
       <td class="td-curso" title="${esc(s.curso||'')}">${esc(s.curso||'')}</td>
@@ -2825,7 +2865,8 @@ async function doImport() {
   if (!nm || !mm) { updatePreview(); return; }
 
   const changes = []; let novos = 0, nFormados = 0, nFormandos = 0, nMovidos = 0;
-  const alunosOut = [], formadosOut = [], apagarFormados = [], arquivarAlunos = [];
+  const alunosOut = [], formadosOut = [], apagarFormados = [], arquivarAlunos = [], novosList = [];
+  const primeiraImportacao = students.size === 0 && formados.size === 0;
   const now0 = Date.now();
 
   parsedRows.filter(r => r[mm] && r[nm]).forEach(r => {
@@ -2848,7 +2889,7 @@ async function doImport() {
 
     if (tipo === 'formado') {
       nFormados++;
-      if (!exF && !exS) novos++;
+      if (!exF && !exS) { novos++; novosList.push([id, nome, 'novo', '', 'Formado']); }
       formadosOut.push({ ...(exF || {}), ...base, cerCon: exF?.cerCon || 'colou', obs: exF?.obs || exS?.obs || '' });
       if (exS && !exS.arq) { arquivarAlunos.push(exS); nMovidos++; changes.push([id, nome, 'situacao', 'Formando', 'Formado']); }
       return;
@@ -2872,7 +2913,7 @@ async function doImport() {
     const cad = mcad ? (r[mcad] || '').trim() : (exS?.cadColacao || '');
     const detectaConsep = normTxt([ocorr, grupo, livro, met ? r[met] : ''].join(' ')).includes('consep');
 
-    if (!exS && !exF) novos++;
+    if (!exS && !exF) { novos++; novosList.push([id, nome, 'novo', '', 'Formando']); }
     else if (exS) {
       if ((exS.doc || 'pendente') !== newDoc) changes.push([id, nome, 'doc', exS.doc || 'pendente', newDoc]);
       if ((exS.etapa || '') !== newEtapa) changes.push([id, nome, 'etapa', exS.etapa || '', newEtapa]);
@@ -2898,6 +2939,29 @@ async function doImport() {
 
   if (!alunosOut.length && !formadosOut.length) { updatePreview(); return; }
 
+  // sinalização de evolução: o que mudou neste arquivo
+  const TIPO_DE_CAMPO = { doc:'doc', etapa:'etapa', aac:'aac', apt:'apt', cat:'cat' };
+  const movs = [];   // [id, nome, tipo, de, para]
+  const txtPorId = new Map(), tipoPorId = new Map();
+  const marca = (id, tipo, txt) => {
+    txtPorId.set(id, (txtPorId.has(id) ? txtPorId.get(id) + '; ' : '') + txt);
+    if (!tipoPorId.has(id)) tipoPorId.set(id, tipo);
+  };
+  changes.forEach(([id, nome, f, de, para]) => {
+    if (f === 'situacao') {
+      const t = de === 'Formando' ? 'virou_formado' : 'voltou_formando';
+      movs.push([id, nome, t, de, para]); marca(id, t, de === 'Formando' ? 'Virou formado' : 'Voltou a formando');
+    } else if (f === 'arq') {
+      if (para === false) { movs.push([id, nome, 'reativado', 'Arquivado', 'Ativo']); marca(id, 'reativado', 'Voltou à base'); }
+    } else if (TIPO_DE_CAMPO[f]) {
+      const dl = valLabel(f, de), pl2 = valLabel(f, para);
+      movs.push([id, nome, f, dl, pl2]); marca(id, f, `${fieldLabel(f)}: ${dl} → ${pl2}`);
+    }
+  });
+  if (!primeiraImportacao) novosList.forEach(([id, nome, t, de, para]) => { movs.push([id, nome, 'novo', '', para]); marca(id, 'novo', 'Novo na base'); });
+  alunosOut.forEach(s => { if (txtPorId.has(s.id)) { s.movTs = now0; s.movTxt = txtPorId.get(s.id).slice(0, 200); s.movTipo = tipoPorId.get(s.id); } });
+  formadosOut.forEach(s => { if (txtPorId.has(s.id)) { s.movTs = now0; s.movTxt = txtPorId.get(s.id).slice(0, 200); s.movTipo = tipoPorId.get(s.id); } });
+
   showStep(3);
   const fill = document.getElementById('progress-fill');
   const label = document.getElementById('progress-label');
@@ -2921,11 +2985,11 @@ async function doImport() {
   }
 
   // arquivar quem não está no arquivo, só dentro da mesma base
-  let arquivados = 0;
+  let arquivados = 0, fora0 = [];
   const syncChk = document.getElementById('imp-sync-chk');
   if (syncChk && syncChk.checked && !document.getElementById('imp-sync').hidden) {
     const ids = new Set([...alunosOut, ...formadosOut].map(s => s.id));
-    const fora = foraDaBase(ids, origem);
+    const fora = foraDaBase(ids, origem); fora0 = fora;
     label.textContent = `Arquivando ${fora.length} alunos fora desta base…`;
     for (let i = 0; i < fora.length; i += 100) {
       const chunk = fora.slice(i, i + 100);
@@ -2944,6 +3008,10 @@ async function doImport() {
   const resumoImp = `base "${origem || 'Base original'}": ${pl(nFormandos, 'formando', 'formandos')}, ${pl(nFormados, 'formado', 'formados')}, ${pl(novos, 'novo', 'novos')}, ${pl(nMud, 'mudança de status', 'mudanças de status')}` +
     (nMovidos ? `, ${pl(nMovidos, 'aluno mudou', 'alunos mudaram')} de aba` : '') + (arquivados ? `, ${pl(arquivados, 'arquivado', 'arquivados')}` : '');
   await logActivity('', 'Importação', 'import', '', resumoImp, 'students', currentUser || 'Equipe');
+  try {
+    fora0.forEach(s => movs.push([s.id, s.nome || s.id, 'arquivado', 'Ativo', 'Saiu da base']));
+    await gravarEventoImportacao({ origem: origem || 'Base original', cat: catImp, arquivo: window._impArquivo || '', movs, alunosOut, formadosOut, apagarFormados, arquivados: fora0 });
+  } catch(e) { console.error('[evolucao]', e); }
   document.getElementById('success-msg').textContent =
     `Importação concluída. ${pl(nFormandos, 'formando', 'formandos')} (aba ${catImp === 'anteriores' ? 'Formandos de semestres anteriores' : 'Prováveis Formandos'}) e ${pl(nFormados, 'formado', 'formados')} (aba Formados). ` +
     `${pl(novos, 'novo', 'novos')}, ${pl(nMud, 'mudança de status', 'mudanças de status')}` + (nMovidos ? `, ${pl(nMovidos, 'aluno mudou', 'alunos mudaram')} de aba` : '') + (arquivados ? `, ${pl(arquivados, 'arquivado', 'arquivados')}` : '') + '.';
@@ -3205,8 +3273,8 @@ function valLabel(field, v) {
   return map[v] || v || '—';
 }
 
-async function logActivity(sid, sname, field, from, to, col='students', whoOverride) {
-  const entry = { ts: Date.now(), who: whoOverride || currentUser || 'Não identificado', sid, sname, field, from: from ?? '', to: to ?? '', col };
+async function logActivity(sid, sname, field, from, to, col='students', whoOverride, extra) {
+  const entry = { ts: Date.now(), who: whoOverride || currentUser || 'Não identificado', sid, sname, field, from: from ?? '', to: to ?? '', col, ...(extra || {}) };
   const docId = `${entry.ts}_${Math.random().toString(36).slice(2,7)}`;
   if (dbCap) {
     try { await dbCap.doc(`activity/${docId}`).set(entry); }
@@ -3234,6 +3302,7 @@ function subscribeActivity() {
     });
     activityLog.sort((a,b) => b.ts - a.ts);
     renderActivity();
+    if (document.getElementById('tab-evolucao')?.classList.contains('active')) renderEvolucao();
     refreshDrawer(false);
   }, err => console.error('[activity snap]', err));
 }
@@ -3263,7 +3332,7 @@ function renderActivity() {
   const feed = document.getElementById('act-feed');
   if (!feed) return;
 
-  const all = [...activityLog.map(a => ({...a, kind: (a.field==='import'||a.field==='clear'||a.field==='pwd') ? 'import' : 'change'})),
+  const all = [...activityLog.filter(a => a.field !== 'impev').map(a => ({...a, kind: (a.field==='import'||a.field==='clear'||a.field==='pwd') ? 'import' : 'change'})),
                ...contacts.map(c => ({...c, kind:'contact'}))].sort((a,b) => b.ts - a.ts);
 
   const todayMid = new Date(); todayMid.setHours(0,0,0,0);
@@ -3354,12 +3423,14 @@ function getFormadosFiltered() {
   const curso= document.getElementById('ff-curso').value;
   const cer  = document.getElementById('ff-cer').value;
   const dat  = document.getElementById('ff-data').value;
+  const fmv  = document.getElementById('ff-mov').value;
 
   return [...formados.values()].filter(s => {
     if (q && !((s.nome||'').toLowerCase().includes(q)||(s.mat||'').includes(q))) return false;
     if (turno !== 'all' && s.turno !== turno) return false;
     if (curso !== 'all' && s.curso !== curso) return false;
     if (cer   !== 'all' && (s.cerCon||'pendente') !== cer) return false;
+    if (fmv !== 'all' && !movFiltro(s, fmv)) return false;
     if (dat === '__sem' && s.colacaoData) return false;
     if (dat !== 'all' && dat !== '__sem' && s.colacaoData !== dat) return false;
     return true;
@@ -3414,7 +3485,7 @@ function renderFormados() {
   tbody.innerHTML = filtered.map(s => {
     const id = s.id;
     return `<tr>
-      <td class="td-nome" title="${esc(s.nome||'')}">${esc(s.nome||'')}</td>
+      <td class="td-nome" title="${esc(s.nome||'')}">${esc(s.nome||'')}${movChip(s)}</td>
       <td class="td-mat">${esc(s.mat||'')}</td>
       <td class="td-curso" title="${esc(s.curso||'')}">${esc(s.curso||'')}</td>
       <td class="td-turno">${esc(s.turno||'')||'<span style="color:var(--faint)">—</span>'}</td>
@@ -3657,6 +3728,147 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); pwaEvt = e; const b = document.getElementById('btn-install'); if (b) b.hidden = false; });
 window.addEventListener('appinstalled', () => { pwaEvt = null; const b = document.getElementById('btn-install'); if (b) b.hidden = true; showToast('App instalado'); });
 async function instalarApp(){ if (!pwaEvt) return; pwaEvt.prompt(); try { await pwaEvt.userChoice; } catch(e){} pwaEvt = null; document.getElementById('btn-install').hidden = true; }
+
+/* ════════════════════════════════════════════
+   EVOLUÇÃO: sinalização e dashboard por importação
+════════════════════════════════════════════ */
+const MOV_DIAS = 14;
+const MOV_LBL = { novo:'Novo na base', virou_formado:'Virou formado', voltou_formando:'Voltou a formando', doc:'Documentação', etapa:'Etapa Digitaliza', aac:'AAC', apt:'Aptidão', cat:'Mudou de grupo', reativado:'Voltou à base', arquivado:'Saiu da base' };
+const MOV_COR = { novo:'#1C3B6E', virou_formado:'#2F7D32', voltou_formando:'#B45309', doc:'#0E7490', etapa:'#0E7490', aac:'#0E7490', apt:'#6D28D9', cat:'#6B7280', reativado:'#1C3B6E', arquivado:'#B91C1C' };
+
+function movRecente(s){ return s.movTs && (Date.now() - s.movTs) <= MOV_DIAS * 86400000; }
+function movChip(s){
+  if (!s.movTxt || !s.movTs) return '';
+  const rec = movRecente(s);
+  const cor = MOV_COR[s.movTipo] || '#1C3B6E';
+  const d = new Date(s.movTs).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+  return `<span class="mov-chip ${rec ? '' : 'old'}" style="--mc:${cor}" title="${esc(s.movTxt)} (importação de ${d})">${esc(s.movTipo === 'novo' ? 'Novo' : s.movTxt.split(';')[0])} · ${d}</span>`;
+}
+function movFiltro(s, f){
+  if (f === 'all') return true;
+  if (!movRecente(s)) return false;
+  if (f === 'rec') return true;
+  if (f === 'novo') return s.movTipo === 'novo';
+  if (f === 'avanco') return ['doc','etapa','aac','apt'].includes(s.movTipo) || /Documenta|Etapa|AAC|Aptid/.test(s.movTxt || '');
+  return true;
+}
+
+function snapshotPainel(alunosOut, formadosOut, apagarFormados, arquivados){
+  const st = new Map(students); alunosOut.forEach(s => st.set(s.id, s));
+  const arqIds = new Set(arquivados.map(s => s.id));
+  const fm = new Map(formados); formadosOut.forEach(s => fm.set(s.id, s)); apagarFormados.forEach(id => fm.delete(id));
+  // aluno que virou formado sai da base ativa
+  formadosOut.forEach(f => { const s = st.get(f.id); if (s) st.set(f.id, {...s, arq:true}); });
+  const ativos = [...st.values()].filter(s => !s.arq && !arqIds.has(s.id));
+  const cont = fn => ativos.filter(fn).length;
+  return {
+    prov: cont(s => catDe(s) === 'provaveis'), ant: cont(s => catDe(s) === 'anteriores'), fmd: fm.size,
+    apto: cont(s => s.apt === 'apto'), naoapto: cont(s => s.apt === 'nao_apto'),
+    doc3: cont(s => s.etapa === '3.0' || s.doc === 'regularizado'), docPend: cont(s => (s.doc || 'pendente') === 'pendente'),
+    aacOk: cont(s => s.aac === 'regularizado' || s.aac === 'dispensado'),
+    consep: cont(s => s.consep === 'solicitar' || s.consep === 'solicitado'),
+  };
+}
+
+async function gravarEventoImportacao({origem, cat, arquivo, movs, alunosOut, formadosOut, apagarFormados, arquivados}){
+  const snap = snapshotPainel(alunosOut, formadosOut, apagarFormados, arquivados);
+  const ordem = { virou_formado:0, voltou_formando:1, doc:2, etapa:3, aac:4, apt:5, reativado:6, cat:7, arquivado:8, novo:9 };
+  const lista = movs.slice().sort((a,b) => (ordem[a[2]] ?? 9) - (ordem[b[2]] ?? 9));
+  const contagem = {}; lista.forEach(m => contagem[m[2]] = (contagem[m[2]] || 0) + 1);
+  let keep = lista.slice(0, 400).map(m => [m[0], String(m[1]).slice(0, 36), m[2], String(m[3]).slice(0, 30), String(m[4]).slice(0, 30)]);
+  const mk = () => ({ origem, cat, arquivo, snap, contagem, movs: keep, mais: lista.length - keep.length });
+  while (JSON.stringify(mk()).length > 42000 && keep.length > 20) keep = keep.slice(0, Math.floor(keep.length * 0.8));
+  const ts = Date.now();
+  const entry = { ts, who: `${currentUser || 'Equipe'} (importação)`, sid: '', sname: origem, field: 'impev', from: '', to: '', col: 'students', d: mk() };
+  const id = `${ts}_impev`;
+  if (dbCap) await dbCap.doc(`activity/${id}`).set(entry);
+  else { activityLog.unshift({...entry, _id: id}); saveActivityLS(); }
+  if (document.getElementById('tab-evolucao')?.classList.contains('active')) renderEvolucao();
+}
+
+function eventosImportacao(){
+  return activityLog.filter(a => a.field === 'impev' && a.d).slice().sort((a,b) => a.ts - b.ts);
+}
+
+function evoChart(id, ev, series){
+  const el = document.getElementById(id); if (!el) return;
+  if (!ev.length) { el.innerHTML = ''; return; }
+  const W = 640, H = 230, L = 40, R = 16, T = 14, B = 34;
+  const max = Math.max(1, ...series.flatMap(s => ev.map(e => e.d.snap[s.k] || 0)));
+  const raw = Math.max(1, max) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const nice = 4 * [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw), n = ev.length;
+  const x = i => L + (n === 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1));
+  const y = v => T + (H - T - B) * (1 - v / nice);
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = nice * k / 4; g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#E7E3DA"/><text x="${L-6}" y="${y(v)+4}" font-size="10" fill="#8A8278" text-anchor="end">${Math.round(v)}</text>`; }
+  const step = Math.ceil(n / 8);
+  ev.forEach((e, i) => { if (i % step === 0 || i === n - 1) g += `<text x="${x(i)}" y="${H-12}" font-size="10" fill="#8A8278" text-anchor="middle">${new Date(e.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + (ev.filter(z => new Date(z.ts).toDateString() === new Date(e.ts).toDateString()).length > 1 ? ' ' + new Date(e.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '')}</text>`; });
+  series.forEach(s => {
+    const pts = ev.map((e, i) => [x(i), y(e.d.snap[s.k] || 0), e.d.snap[s.k] || 0, e]);
+    if (n > 1) g += `<polyline fill="none" stroke="${s.cor}" stroke-width="2.5" stroke-linejoin="round" points="${pts.map(p => p[0]+','+p[1]).join(' ')}"/>`;
+    pts.forEach(p => g += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.cor}" stroke="#fff" stroke-width="1.5"><title>${s.nome}: ${p[2]} em ${fmtDateTime(p[3].ts)} (${esc(p[3].sname||'')})</title></circle>`);
+  });
+  const leg = series.map(s => `<span class="evo-leg"><i style="background:${s.cor}"></i>${s.nome}</span>`).join('');
+  el.innerHTML = `<div class="evo-legend">${leg}</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolução por importação" style="width:100%;height:auto">${g}</svg>`;
+}
+
+function renderEvolucao(){
+  const root = document.getElementById('evo-root'); if (!root) return;
+  const ev = eventosImportacao();
+  if (!ev.length) {
+    root.innerHTML = '<div class="act-empty">Ainda não há importações registradas para mostrar a evolução.<br>Ela começa a partir da próxima importação de base, e cada nova importação vira um ponto no gráfico.</div>';
+    return;
+  }
+  const last = ev[ev.length - 1].d.snap, prev = ev.length > 1 ? ev[ev.length - 2].d.snap : null;
+  const tile = (k, nome, bomQuandoSobe) => {
+    const v = last[k] || 0, d = prev ? v - (prev[k] || 0) : null;
+    const cls = d === null || d === 0 ? '' : ((d > 0) === bomQuandoSobe ? 'up' : 'down');
+    return `<div class="evo-tile"><div class="evo-num">${v}</div><div class="evo-lbl">${nome}</div><div class="evo-delta ${cls}">${d === null ? 'primeira importação' : d === 0 ? 'sem mudança' : (d > 0 ? '+' : '') + d + ' desde a importação anterior'}</div></div>`;
+  };
+  const tiles = tile('prov','Prováveis formandos',true) + tile('ant','Formandos de semestres anteriores',false) + tile('fmd','Formados',true) +
+    tile('apto','Aptos',true) + tile('doc3','Documentação aprovada',true) + tile('docPend','Documentação pendente',false) + tile('consep','Consep em aberto',false);
+
+  // período
+  const pf = document.getElementById('evo-periodo')?.value || 'all';
+  const q = normTxt(document.getElementById('evo-busca')?.value || '');
+  const tp = document.getElementById('evo-tipo')?.value || 'all';
+  const lim = pf === 'all' ? 0 : Date.now() - Number(pf) * 86400000;
+
+  const cards = ev.slice().reverse().map(e => {
+    const c = e.d.contagem || {};
+    const chips = Object.keys(MOV_LBL).filter(k => c[k]).map(k => `<span class="mov-chip" style="--mc:${MOV_COR[k]}">${c[k]} ${MOV_LBL[k].toLowerCase()}</span>`).join('') || '<span style="color:var(--faint)">nenhuma mudança</span>';
+    return `<div class="evo-imp"><div class="evo-imp-h"><strong>${esc(e.sname || 'Base')}</strong> <span style="color:var(--faint)">${fmtDateTime(e.ts)}, ${esc((e.who||'').replace(' (importação)',''))}${e.d.arquivo ? ', ' + esc(e.d.arquivo) : ''}</span></div><div class="evo-chips">${chips}</div></div>`;
+  }).join('');
+
+  const linhas = [];
+  ev.slice().reverse().forEach(e => {
+    if (lim && e.ts < lim) return;
+    (e.d.movs || []).forEach(m => {
+      if (tp !== 'all' && m[2] !== tp) return;
+      if (q && !normTxt(m[0] + ' ' + m[1]).includes(q)) return;
+      linhas.push({ ts: e.ts, base: e.sname, m });
+    });
+  });
+  const tbody = linhas.slice(0, 500).map(l => `<tr><td>${new Date(l.ts).toLocaleDateString('pt-BR')}</td><td>${students.has(l.m[0]) ? `<button class="link-btn" onclick="openDrawer('${esc(l.m[0])}')">${esc(l.m[1])}</button>` : esc(l.m[1])}</td><td class="mono">${esc(l.m[0])}</td><td><span class="mov-chip" style="--mc:${MOV_COR[l.m[2]]||'#1C3B6E'}">${esc(MOV_LBL[l.m[2]] || l.m[2])}</span></td><td>${l.m[3] ? esc(l.m[3]) + ' → ' : ''}${esc(l.m[4])}</td><td>${esc(l.base||'')}</td></tr>`).join('');
+  const opts = Object.keys(MOV_LBL).map(k => `<option value="${k}" ${tp===k?'selected':''}>${MOV_LBL[k]}</option>`).join('');
+  root.innerHTML = `
+    <div class="evo-tiles">${tiles}</div>
+    <div class="evo-card"><h3>Alunos por importação</h3><div id="evo-ch1"></div></div>
+    <div class="evo-card"><h3>Documentação, aptidão e Consep</h3><div id="evo-ch2"></div></div>
+    <div class="evo-card"><h3>Importações</h3>${cards}</div>
+    <div class="evo-card"><h3>Movimentações de alunos</h3>
+      <div class="evo-filters">
+        <input type="search" id="evo-busca" class="filter-search" placeholder="Buscar aluno ou matrícula…" value="${esc(document.getElementById('evo-busca')?.value || '')}" oninput="renderEvolucao()">
+        <select class="filter-select" id="evo-tipo" onchange="renderEvolucao()"><option value="all">Todos os tipos</option>${opts}</select>
+        <select class="filter-select" id="evo-periodo" onchange="renderEvolucao()">${[['all','Todo o período'],['7','Últimos 7 dias'],['30','Últimos 30 dias']].map(([v,l])=>`<option value="${v}" ${pf===v?'selected':''}>${l}</option>`).join('')}</select>
+        <span class="filter-count">${linhas.length} movimentaç${linhas.length===1?'ão':'ões'}</span>
+      </div>
+      <div class="table-wrap" style="max-height:420px"><table class="student-table"><thead><tr><th>Data</th><th>Aluno</th><th>Matrícula</th><th>Tipo</th><th>Mudança</th><th>Base</th></tr></thead><tbody>${tbody || '<tr><td colspan="6" class="empty-state"><p>Nenhuma movimentação com esse filtro.</p></td></tr>'}</tbody></table></div>
+      ${ev.some(e => e.d.mais) ? '<p class="d-note">Em importações muito grandes, a lista detalhada mostra as mudanças mais importantes e omite parte dos alunos novos. Os totais acima continuam completos.</p>' : ''}
+    </div>`;
+  evoChart('evo-ch1', ev, [{k:'prov',nome:'Prováveis',cor:'#1C3B6E'},{k:'ant',nome:'Semestres anteriores',cor:'#B45309'},{k:'fmd',nome:'Formados',cor:'#2F7D32'}]);
+  evoChart('evo-ch2', ev, [{k:'doc3',nome:'Doc. aprovada',cor:'#0E7490'},{k:'apto',nome:'Aptos',cor:'#6D28D9'},{k:'docPend',nome:'Doc. pendente',cor:'#B91C1C'},{k:'consep',nome:'Consep em aberto',cor:'#6B7280'}]);
+}
 
 /* ── UTILS ── */
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -3947,6 +4159,7 @@ function drawerLiveHTML(s){
         <datalist id="dr-names">${names}</datalist></div>
     </div>
     ${fluxoNote}
+    ${s.movTxt ? `<p class="d-note"><strong>Última movimentação na importação de ${fmtDate(new Date(s.movTs).toISOString().slice(0,10))}:</strong> ${esc(s.movTxt)}</p>` : ''}
     ${(s.livro||s.ocorr||s.cadColacao||s.grupo) ? `<p class="d-note">${[s.grupo?'Grupo na base: '+esc(s.grupo):'', livroTxt(s)?'No livro: '+esc(livroTxt(s)):'', s.cadColacao?'Cadastro de colação: '+esc(s.cadColacao):'', s.ocorr?'Ocorrência: '+esc(s.ocorr):'', s.origem?'Base: '+esc(s.origem):''].filter(Boolean).join(' · ')}</p>` : ''}
   </section>
 
