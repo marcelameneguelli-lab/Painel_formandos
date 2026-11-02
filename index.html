@@ -361,6 +361,21 @@ body.perfil-atendente .admin-only{display:none!important}
 .mov-chip.old{opacity:.55}
 td .mov-chip{display:block;width:fit-content;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .mono{font-variant-numeric:tabular-nums}
+.login-screen{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(1200px 700px at 30% 20%,#0b4a8a 0%,#003B71 45%,#002451 100%)}
+.login-screen[hidden]{display:none!important}
+.login-card{width:100%;max-width:304px;box-sizing:content-box;padding:28px 26px 22px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);box-shadow:0 20px 60px rgba(0,0,0,.35);backdrop-filter:blur(8px);color:#fff;font-family:inherit}
+.login-brand{display:flex;align-items:center;justify-content:center;gap:10px}
+.login-ico{font-size:22px}.login-title{font-size:22px;font-weight:700;letter-spacing:-.2px}
+.login-sub{text-align:center;font-size:11px;color:rgba(255,255,255,.65);margin:4px 0 22px}
+.login-field{margin-bottom:14px}
+.login-field label{display:block;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:5px}
+.login-field input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);color:#fff;font:inherit;font-size:14px;outline:none}
+.login-field input::placeholder{color:rgba(255,255,255,.45)}
+.login-field input:focus{border-color:#6aa9ff;box-shadow:0 0 0 3px rgba(106,169,255,.28)}
+.login-aviso{margin:0 0 12px;padding:8px 10px;border-radius:8px;background:rgba(185,28,28,.28);border:1px solid rgba(254,202,202,.5);font-size:12px;font-weight:600;line-height:1.4}
+.login-btn{width:100%;padding:11px;border:0;border-radius:10px;cursor:pointer;font:inherit;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(90deg,#8DC63F,#6aa82a);margin-top:6px}
+.login-btn:disabled{opacity:.6;cursor:wait}
+.login-foot{margin-top:16px;text-align:center;font-size:10.5px;line-height:1.5;color:rgba(255,255,255,.55)}
 .activity-wrap{max-width:700px;margin:0 auto;padding:24px 24px 80px;}
 .act-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
 .act-header h2{font-size:16px;font-weight:600;}
@@ -1259,18 +1274,34 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
   </div>
 </div>
 
-<!-- ── NAME MODAL ── -->
-<div id="gas-modal" hidden class="modal-overlay">
-  <div class="modal-box modal-box-sm">
-    <div class="modal-header"><h2>Acesso ao painel</h2></div>
+<!-- ── LOGIN ── -->
+<div id="gas-modal" hidden class="login-screen">
+  <form class="login-card" onsubmit="enviarCredenciais(event)" autocomplete="on">
+    <div class="login-brand"><span class="login-ico">🎓</span><span class="login-title">Painel Formandos</span></div>
+    <div class="login-sub">Estácio Volta Redonda · Colação de grau</div>
+    <div id="gas-url-row" class="login-field" hidden><label for="gas-url">URL do Google Apps Script</label><input id="gas-url" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="login-field"><label for="gas-email">E-mail corporativo</label><input id="gas-email" type="email" name="username" autocomplete="username" inputmode="email" spellcheck="false" placeholder="nome@estacio.br"></div>
+    <div class="login-field"><label for="gas-senha">Senha</label><input id="gas-senha" type="password" name="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <p id="gas-aviso" class="login-aviso" role="alert" hidden></p>
+    <button type="submit" class="login-btn" id="gas-btn">🔒 Entrar</button>
+    <div class="login-foot">Acesso restrito à equipe autorizada.<br>Primeiro acesso ou esqueceu a senha? Peça uma senha provisória à coordenação.</div>
+  </form>
+</div>
+
+<!-- ── TROCAR SENHA ── -->
+<div id="pwd-modal" hidden class="modal-overlay">
+  <form class="modal-box modal-box-sm" onsubmit="enviarNovaSenha(event)">
+    <div class="modal-header"><h2 id="pwd-titulo">Criar sua senha</h2><button type="button" class="modal-close" id="pwd-x" onclick="fecharTrocaSenha()" hidden>✕</button></div>
     <div class="modal-body">
-      <p class="modal-desc">Digite a <strong>sua chave pessoal</strong> de acesso. Ela é pedida uma vez em cada computador e é ela que identifica você no histórico. Não tem chave? Peça à coordenação.</p>
-      <div id="gas-url-row" class="d-field" style="margin-bottom:10px"><label for="gas-url">URL do Google Apps Script (termina em /exec)</label><input id="gas-url" class="d-input" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></div>
-      <div class="d-field"><label for="gas-key">Chave de acesso</label><input id="gas-key" class="d-input" type="password" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" onkeydown="if(event.key==='Enter') enviarCredenciais()"></div>
-      <p id="gas-aviso" class="d-note" style="color:var(--danger-c);font-weight:600" hidden></p>
+      <p class="modal-desc" id="pwd-desc">Por segurança, crie agora a sua senha pessoal. Use pelo menos 8 caracteres, com letras e números.</p>
+      <input type="text" name="username" autocomplete="username" hidden tabindex="-1" id="pwd-user">
+      <div class="d-field"><label for="pwd-atual" id="pwd-atual-lbl">Senha provisória</label><input id="pwd-atual" class="d-input" type="password" autocomplete="current-password"></div>
+      <div class="d-field" style="margin-top:8px"><label for="pwd-nova">Nova senha</label><input id="pwd-nova" class="d-input" type="password" autocomplete="new-password"></div>
+      <div class="d-field" style="margin-top:8px"><label for="pwd-nova2">Repita a nova senha</label><input id="pwd-nova2" class="d-input" type="password" autocomplete="new-password"></div>
+      <p id="pwd-aviso" class="d-note" style="color:var(--danger-c);font-weight:600" hidden></p>
     </div>
-    <div class="modal-footer"><button class="btn btn-primary" onclick="enviarCredenciais()">Entrar</button></div>
-  </div>
+    <div class="modal-footer"><button type="submit" class="btn btn-primary" id="pwd-btn">Salvar senha</button></div>
+  </form>
 </div>
 
 <div id="name-modal" hidden class="modal-overlay">
@@ -1284,12 +1315,13 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
         <div class="name-modal-icon">👤</div>
         <h3 id="user-modal-nome">—</h3>
         <p id="user-modal-perfil" style="margin-bottom:10px">—</p>
-        <p>O nome vem da sua chave e aparece em tudo o que você registrar. Em computador compartilhado, use "Sair deste computador" ao terminar.</p>
+        <p id="user-modal-email" style="margin-bottom:8px;color:var(--muted,#6b6459)"></p><p>O nome vem do seu cadastro e aparece em tudo o que você registrar. Em computador compartilhado, use "Sair" ao terminar.</p>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost-dark" onclick="closeUserModal()">Fechar</button>
-      <button class="btn btn-danger-ghost" onclick="sairDesteComputador()">Sair deste computador</button>
+      <button class="btn btn-ghost-dark" onclick="abrirTrocaSenha()">Trocar minha senha</button>
+      <button class="btn btn-danger-ghost" onclick="sairDesteComputador()">Sair</button>
     </div>
   </div>
 </div>
@@ -1894,13 +1926,15 @@ const STATUS_STYLE = {
 ════════════════════════════════════════════ */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6F0i5R90u3k7RVPDdQAkNb6uzNVcuajFqxlw98tbo1U8M2cyBlWAPf2E5RjKwRavH_Q/exec';
 const LS_GAS_URL = 'formandos_gas_url';
-const LS_GAS_KEY = 'formandos_gas_key';
+const LS_GAS_KEY = 'formandos_gas_key';          // chave antiga (versão anterior), só para limpar
+const LS_GAS_TOKEN = 'formandos_gas_token';
+const VERSAO_SERVIDOR = 3;
 
 const GasDB = (() => {
   const COLS = ['students', 'formados', 'activity', 'contacts', 'regua'];
   const cache = {}, listeners = {};
   COLS.forEach(c => { cache[c] = new Map(); listeners[c] = []; });
-  let url = '', key = '', since = 0, eu = null;
+  let url = '', token = '', since = 0, eu = null;
   let queue = [], flushing = false, flushTimer = null, epoch = 0;
   let polling = false, pollTimer = null, falhas = 0, precisaCompleto = false, ultimoErro = '';
 
@@ -1923,7 +1957,7 @@ const GasDB = (() => {
   }
 
   /* ── rede ── */
-  async function chamar(corpo) {
+  async function bruto(corpo) {
     const ctl = new AbortController();
     const to = setTimeout(() => ctl.abort(), 40000);
     let r;
@@ -1931,18 +1965,20 @@ const GasDB = (() => {
       r = await fetch(url, {
         method: 'POST', redirect: 'follow', signal: ctl.signal,
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // evita pré-voo CORS, que o Apps Script não responde
-        body: JSON.stringify({ key, ...corpo }),
+        body: JSON.stringify(corpo),
       });
     } catch (e) {
       const err = new Error(e.name === 'AbortError' ? 'tempo esgotado' : 'sem resposta do Google'); err.rede = true; throw err;
     } finally { clearTimeout(to); }
-    let j;
-    try { j = await r.json(); }
+    try { return await r.json(); }
     catch (e) { const err = new Error('resposta inesperada, confira se a implantação está como "Qualquer pessoa"'); err.rede = true; throw err; }
-    if (j && ['auth', 'inativo', 'sem_acessos'].includes(j.error)) {
-      const err = new Error('acesso negado'); err.auth = true; err.motivo = j.error; err.velha = j.ver !== 2; throw err;
+  }
+  async function chamar(corpo) {
+    const j = await bruto({ token, ...corpo });
+    if (j && ['auth', 'inativo', 'sem_acessos', 'expirou', 'trocar'].includes(j.error)) {
+      const err = new Error('acesso negado'); err.auth = true; err.motivo = j.error; err.velha = j.ver !== VERSAO_SERVIDOR; throw err;
     }
-    if (j && j.me) { const mudou = !eu || eu.nome !== j.me.nome || eu.perfil !== j.me.perfil; eu = j.me; if (mudou && window.onIdentidade) window.onIdentidade(eu); }
+    if (j && j.me) { const mudou = !eu || eu.nome !== j.me.nome || eu.perfil !== j.me.perfil || eu.email !== j.me.email; eu = j.me; if (mudou && window.onIdentidade) window.onIdentidade(eu); }
     if (j && j.error === 'sem_permissao' && window.showToast) showToast('Seu perfil não permite esta ação. Recarregue a página.');
     return j;
   }
@@ -2093,71 +2129,167 @@ const GasDB = (() => {
     },
   };
 
-  /* ── credenciais ── */
+  /* ── login (e-mail + senha) ── */
   let pedido = null;
   function pedirCredenciais({ precisaUrl, aviso }) {
     return new Promise(resolve => {
       pedido = resolve;
       document.getElementById('gas-url-row').hidden = !precisaUrl;
       document.getElementById('gas-url').value = url || '';
-      document.getElementById('gas-key').value = '';
+      document.getElementById('gas-senha').value = '';
+      const btn = document.getElementById('gas-btn'); btn.disabled = false; btn.textContent = '🔒 Entrar';
       const av = document.getElementById('gas-aviso'); av.textContent = aviso || ''; av.hidden = !aviso;
       document.getElementById('gas-modal').hidden = false;
-      setTimeout(() => document.getElementById(precisaUrl && !url ? 'gas-url' : 'gas-key').focus(), 60);
+      setTimeout(() => { const em = document.getElementById('gas-email'); document.getElementById(precisaUrl && !url ? 'gas-url' : (em.value ? 'gas-senha' : 'gas-email')).focus(); }, 60);
     });
   }
-  window.enviarCredenciais = function () {
-    const u = document.getElementById('gas-url').value.trim(), k = document.getElementById('gas-key').value.trim();
-    if (!k || (!document.getElementById('gas-url-row').hidden && !/^(https:\/\/script\.google\.com\/|http:\/\/localhost(:\d+)?\/).*exec/.test(u))) {
-      const av = document.getElementById('gas-aviso'); av.textContent = !k ? 'Digite a chave de acesso.' : 'A URL deve começar com https://script.google.com e terminar em /exec.'; av.hidden = false; return;
-    }
-    document.getElementById('gas-modal').hidden = true;
-    const r = pedido; pedido = null; if (r) r({ url: u, key: k });
+  window.enviarCredenciais = function (ev) {
+    if (ev) ev.preventDefault();
+    const u = document.getElementById('gas-url').value.trim();
+    const email = document.getElementById('gas-email').value.trim(), senha = document.getElementById('gas-senha').value;
+    const av = document.getElementById('gas-aviso');
+    const erro = !email ? 'Digite o seu e-mail corporativo.' : !senha ? 'Digite a sua senha.'
+      : (!document.getElementById('gas-url-row').hidden && !/^(https:\/\/script\.google\.com\/|http:\/\/localhost(:\d+)?\/).*exec/.test(u)) ? 'A URL deve começar com https://script.google.com e terminar em /exec.' : '';
+    if (erro) { av.textContent = erro; av.hidden = false; return; }
+    const btn = document.getElementById('gas-btn'); btn.disabled = true; btn.textContent = 'Entrando…';
+    const r = pedido; pedido = null; if (r) r({ url: u, email, senha });
   };
+
+  let pedidoSenha = null;
+  function pedirNovaSenha({ aviso, email }) {
+    return new Promise(resolve => { pedidoSenha = resolve; mostrarTrocaSenha({ forcado: true, aviso, email }); });
+  }
+  function mostrarTrocaSenha({ forcado, aviso, email }) {
+    document.getElementById('pwd-titulo').textContent = forcado ? 'Criar sua senha' : 'Trocar minha senha';
+    document.getElementById('pwd-desc').textContent = forcado
+      ? 'Por segurança, crie agora a sua senha pessoal. Use pelo menos 8 caracteres, com letras e números. A senha provisória deixa de valer.'
+      : 'Use pelo menos 8 caracteres, com letras e números. As outras sessões abertas com a senha antiga serão encerradas.';
+    document.getElementById('pwd-atual-lbl').textContent = forcado ? 'Senha provisória' : 'Senha atual';
+    document.getElementById('pwd-x').hidden = !!forcado;
+    document.getElementById('pwd-user').value = email || (eu && eu.email) || '';
+    ['pwd-atual', 'pwd-nova', 'pwd-nova2'].forEach(i => document.getElementById(i).value = '');
+    const btn = document.getElementById('pwd-btn'); btn.disabled = false; btn.textContent = 'Salvar senha';
+    const av = document.getElementById('pwd-aviso'); av.textContent = aviso || ''; av.hidden = !aviso;
+    document.getElementById('pwd-modal').hidden = false;
+    setTimeout(() => document.getElementById('pwd-atual').focus(), 60);
+  }
+  window.abrirTrocaSenha = function () { document.getElementById('name-modal').hidden = true; mostrarTrocaSenha({ forcado: false }); };
+  window.fecharTrocaSenha = function () { document.getElementById('pwd-modal').hidden = true; };
+  window.enviarNovaSenha = async function (ev) {
+    if (ev) ev.preventDefault();
+    const atual = document.getElementById('pwd-atual').value, nova = document.getElementById('pwd-nova').value, nova2 = document.getElementById('pwd-nova2').value;
+    const av = document.getElementById('pwd-aviso');
+    const erro = !atual ? 'Digite a senha atual.' : nova.length < 8 ? 'Use pelo menos 8 caracteres.' : (!/[A-Za-z]/.test(nova) || !/[0-9]/.test(nova)) ? 'Misture letras e números.' : nova !== nova2 ? 'As duas senhas novas não são iguais.' : '';
+    if (erro) { av.textContent = erro; av.hidden = false; return; }
+    const btn = document.getElementById('pwd-btn'); btn.disabled = true; btn.textContent = 'Salvando…';
+    if (pedidoSenha) { const r = pedidoSenha; pedidoSenha = null; r({ atual, nova }); return; }
+    try {
+      const r = await acesso._trocarSenha(atual, nova);
+      if (r.ok) { document.getElementById('pwd-modal').hidden = true; showToast('Senha alterada'); }
+      else { av.textContent = msgSenha(r); av.hidden = false; btn.disabled = false; btn.textContent = 'Salvar senha'; }
+    } catch (e) { av.textContent = 'Não consegui falar com o servidor: ' + e.message; av.hidden = false; btn.disabled = false; btn.textContent = 'Salvar senha'; }
+  };
+  function msgSenha(r) {
+    if (r.ver !== VERSAO_SERVIDOR && r.error === 'auth') return 'Sessão expirada. Entre de novo.';
+    return ({ senha_atual: 'A senha atual não confere.', bloqueado: 'Muitas tentativas erradas. Aguarde 15 minutos.', senha_fraca: r.detalhe || 'Escolha uma senha mais forte.' })[r.error] || ('Não foi possível trocar a senha (' + (r.error || 'erro') + ').');
+  }
 
   function msgAcesso(e) {
     if (e && e.velha) return 'O servidor do Google (Apps Script) ainda está na versão antiga. A coordenação precisa publicar a "Nova versão" da implantação.';
     if (e && e.motivo === 'inativo') return 'Seu acesso está desativado. Fale com a coordenação.';
-    if (e && e.motivo === 'sem_acessos') return 'Nenhum acesso foi cadastrado no servidor. A coordenação precisa rodar "configurar" no Apps Script.';
-    return 'Chave incorreta. Confira se copiou a chave inteira, com os hifens.';
+    if (e && e.motivo === 'sem_acessos') return 'Nenhum usuário foi cadastrado no servidor. A coordenação precisa rodar "configurar" no Apps Script.';
+    if (e && e.motivo === 'expirou') return 'Sua sessão expirou. Entre de novo.';
+    return 'Entre com o seu e-mail e a sua senha.';
   }
+  function msgEntrar(r) {
+    if (r.ver !== VERSAO_SERVIDOR) return 'O servidor do Google (Apps Script) ainda está na versão antiga. A coordenação precisa publicar a "Nova versão" da implantação.';
+    if (r.error === 'bloqueado') return 'Muitas tentativas erradas. Aguarde 15 minutos e tente de novo.';
+    if (r.error === 'inativo') return 'Seu acesso está desativado. Fale com a coordenação.';
+    if (r.error === 'sem_acessos') return 'Nenhum usuário foi cadastrado no servidor. A coordenação precisa rodar "configurar" no Apps Script.';
+    return 'E-mail ou senha incorretos.' + (typeof r.restam === 'number' && r.restam <= 2 ? ` Restam ${r.restam} tentativa${r.restam !== 1 ? 's' : ''} antes do bloqueio temporário.` : '');
+  }
+
   const urlFixa = () => GAS_URL && !/COLE_AQUI/.test(GAS_URL);
-  return {
+  const guardarToken = () => { try { localStorage.setItem(LS_GAS_TOKEN, token); if (!urlFixa()) localStorage.setItem(LS_GAS_URL, url); } catch (e) {} };
+
+  /* pede e-mail e senha até dar certo (e a troca da senha provisória, quando for o caso) */
+  async function entrarInterativo(aviso) {
+    for (;;) {
+      if (!url) { const c = await pedirCredenciais({ precisaUrl: true, aviso }); url = c.url; aviso = ''; }
+      const c = await pedirCredenciais({ precisaUrl: !urlFixa() && !url, aviso });
+      if (c.url) url = c.url;
+      let r;
+      try { r = await bruto({ action: 'entrar', email: c.email, senha: c.senha }); }
+      catch (e) { aviso = 'Não consegui conectar: ' + e.message + '. Tente de novo.'; continue; }
+      if (!r || !r.ok) { aviso = msgEntrar(r || {}); continue; }
+      token = r.token;
+      if (r.trocar) {
+        document.getElementById('gas-modal').hidden = true;
+        let av = '';
+        for (;;) {
+          const n = await pedirNovaSenha({ aviso: av, email: c.email });
+          let t;
+          try { t = await bruto({ action: 'trocar_senha', token, atual: n.atual, nova: n.nova }); }
+          catch (e) { av = 'Não consegui falar com o servidor: ' + e.message; continue; }
+          if (t && t.ok) { token = t.token; break; }
+          av = msgSenha(t || {});
+          if (t && t.error === 'auth') { token = ''; break; }
+        }
+        document.getElementById('pwd-modal').hidden = true;
+        if (!token) { aviso = 'Sessão expirada. Entre de novo.'; continue; }
+      }
+      guardarToken();
+      document.getElementById('gas-modal').hidden = true;
+      document.getElementById('gas-senha').value = '';
+      return;
+    }
+  }
+
+  let reauth = null;
+  const acesso = {
     ultimoErro: () => ultimoErro,
     async _reautenticar(e) {
-      try { localStorage.removeItem(LS_GAS_KEY); } catch (x) {}
-      const c = await pedirCredenciais({ precisaUrl: false, aviso: msgAcesso(e) });
-      key = c.key; localStorage.setItem(LS_GAS_KEY, key); return true;
+      if (!reauth) {
+        reauth = (async () => {
+          token = ''; try { localStorage.removeItem(LS_GAS_TOKEN); } catch (x) {}
+          await entrarInterativo(msgAcesso(e));
+          return true;
+        })().finally(() => { reauth = null; });
+      }
+      return reauth;
+    },
+    async _trocarSenha(atual, nova) {
+      const r = await bruto({ action: 'trocar_senha', token, atual, nova });
+      if (r && r.ok) { token = r.token; guardarToken(); }
+      return r;
     },
     eu: () => eu,
     async conectar() {
       url = urlFixa() ? GAS_URL : (localStorage.getItem(LS_GAS_URL) || '');
-      key = localStorage.getItem(LS_GAS_KEY) || '';
+      try { localStorage.removeItem(LS_GAS_KEY); } catch (x) {}
+      token = localStorage.getItem(LS_GAS_TOKEN) || '';
       let aviso = '';
       for (;;) {
-        if (!url || !key) {
-          const c = await pedirCredenciais({ precisaUrl: !urlFixa(), aviso });
-          if (c.url) url = c.url; key = c.key; aviso = '';
-        }
+        if (!url || !token) { await entrarInterativo(aviso); aviso = ''; }
         try {
           setSyncLabel('local', 'Conectando…');
           const r = await chamar({ action: 'poll', since: 0 });
           if (!r.ok) throw new Error(r.error || 'erro no servidor');
           COLS.forEach(c => aplicarRemoto(c, (r.docs || {})[c], true));
           since = r.v;
-          try { localStorage.setItem(LS_GAS_KEY, key); if (!urlFixa()) localStorage.setItem(LS_GAS_URL, url); } catch (e) {}
+          guardarToken();
           agendarSondagem();
           return api;
         } catch (e) {
-          if (e.auth) { key = ''; try { localStorage.removeItem(LS_GAS_KEY); } catch (x) {} aviso = msgAcesso(e); continue; }
+          if (e.auth) { token = ''; try { localStorage.removeItem(LS_GAS_TOKEN); } catch (x) {} aviso = msgAcesso(e); continue; }
           ultimoErro = e.message;
-          if (urlFixa() && localStorage.getItem(LS_GAS_KEY)) return null;
           if (urlFixa()) return null;
           url = ''; aviso = 'Não consegui conectar: ' + e.message + '. Confira a URL.'; try { localStorage.removeItem(LS_GAS_URL); } catch (x) {}
         }
       }
     },
   };
+  return acesso;
 })();
 
 (async () => {
@@ -3236,6 +3368,7 @@ function updateUserPill() {
 
 function openUserModal() {
   document.getElementById('user-modal-nome').textContent = currentUser || 'Sem acesso';
+  { const em = document.getElementById('user-modal-email'); if (em) em.textContent = (GasDB.eu() || {}).email || ''; }
   document.getElementById('user-modal-perfil').textContent = currentPerfil === 'admin' ? 'Administrador(a)' : (currentPerfil ? 'Atendente' : 'Não conectado');
   document.getElementById('name-modal').hidden = false;
 }
@@ -3244,7 +3377,7 @@ function openNameModal() { openUserModal(); }
 function closeNameModal() { closeUserModal(); }
 
 function sairDesteComputador() {
-  try { localStorage.removeItem('formandos_gas_key'); localStorage.removeItem(USER_KEY); } catch(e) {}
+  try { localStorage.removeItem('formandos_gas_key'); localStorage.removeItem('formandos_gas_token'); localStorage.removeItem(USER_KEY); } catch(e) {}
   location.reload();
 }
 
