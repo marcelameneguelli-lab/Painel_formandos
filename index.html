@@ -663,6 +663,11 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
 
   <div class="filters-bar">
     <input type="search" autocomplete="off" class="filter-search" id="f-search" placeholder="Buscar por nome, matrícula…" oninput="applyFilters()">
+    <select class="filter-select" id="f-modal" onchange="applyFilters()">
+      <option value="all">Modalidade: Todas</option>
+      <option value="EAD">EAD (virtual)</option>
+      <option value="Presencial">Presencial</option>
+    </select>
     <select class="filter-select" id="f-turno" onchange="applyFilters()">
       <option value="all">Todos os turnos</option>
     </select>
@@ -803,6 +808,11 @@ textarea.d-input{resize:vertical;min-height:56px;line-height:1.45;}
 
   <div class="filters-bar">
     <input type="search" autocomplete="off" class="filter-search" id="ff-search" placeholder="Buscar por nome, matrícula…" oninput="applyFormadosFilters()">
+    <select class="filter-select" id="ff-modal" onchange="applyFormadosFilters()">
+      <option value="all">Modalidade: Todas</option>
+      <option value="EAD">EAD (virtual)</option>
+      <option value="Presencial">Presencial</option>
+    </select>
     <select class="filter-select" id="ff-turno" onchange="applyFormadosFilters()">
       <option value="all">Todos os turnos</option>
     </select>
@@ -2406,6 +2416,7 @@ function getFiltered() {
   const origem = document.getElementById('f-origem').value;
   const fen = document.getElementById('f-enade').value;
   const fmov = document.getElementById('f-mov').value;
+  const fmod = document.getElementById('f-modal').value;
   const acomp = document.getElementById('f-acomp').value;
   const hoje  = todayStr();
   const em7   = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
@@ -2427,6 +2438,7 @@ function getFiltered() {
     if (origem !== 'all' && origemDe(s) !== origem) return false;
     if (fen !== 'all' && !enadeMatch(s, fen)) return false;
     if (!movFiltro(s, fmov)) return false;
+    if (fmod !== 'all' && modalidadeDe(s) !== fmod) return false;
     if (etapa !== 'all' && (s.etapa||'') !== etapa) return false;
     if (resp === '__none' && s.resp) return false;
     if (resp !== 'all' && resp !== '__none' && s.resp !== resp) return false;
@@ -3244,7 +3256,7 @@ async function exportCSV() {
   const rows=viewStudents().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   if (rows.length===0) { showToast('Nenhum dado para exportar'); return; }
 
-  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Saldo de horas AAC','Consep','ENADE 2025','ENADE 2026','Situação no livro','Base','Grupo','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
+  const headers=['Nome','Matrícula','Curso','Nome Fantasia','Modalidade','Turno','Forma de Ingresso','Etapa Digitaliza','Documentação','AAC','Saldo de horas AAC','Consep','ENADE 2025','ENADE 2026','Situação no livro','Base','Grupo','Aptidão','Biblioteca','Responsável','Último contato','Próximo passo','Prazo','Próxima ação','Último registro','Observações'];
   const docMap={pendente:'Pendente',entregue:'Entregue',regularizado:'Regularizado'};
   const aacMap={pendente:'Pendente',regularizado:'Regularizado',dispensado:'Dispensado'};
   const aptMap={em_analise:'Em análise',apto:'Apto',nao_apto:'Não apto'};
@@ -3254,7 +3266,7 @@ async function exportCSV() {
   const csv = [
     '﻿' + headers.join(';'),
     ...rows.map(s=>[
-      cc(s.nome), cc(s.mat), cc(s.curso), cc(s.fantasia), cc(s.turno), cc(s.ingresso),
+      cc(s.nome), cc(s.mat), cc(s.curso), cc(s.fantasia), cc(modalidadeDe(s)), cc(s.turno), cc(s.ingresso),
       cc(ETAPA_LBL[s.etapa||'']||''),
       cc(docMap[s.doc]||s.doc||''),
       cc(aacMap[s.aac]||s.aac||''),
@@ -3557,6 +3569,7 @@ function getFormadosFiltered() {
   const cer  = document.getElementById('ff-cer').value;
   const dat  = document.getElementById('ff-data').value;
   const fmv  = document.getElementById('ff-mov').value;
+  const fmd  = document.getElementById('ff-modal').value;
 
   return [...formados.values()].filter(s => {
     if (q && !((s.nome||'').toLowerCase().includes(q)||(s.mat||'').includes(q))) return false;
@@ -3564,6 +3577,7 @@ function getFormadosFiltered() {
     if (curso !== 'all' && s.curso !== curso) return false;
     if (cer   !== 'all' && (s.cerCon||'pendente') !== cer) return false;
     if (fmv !== 'all' && !movFiltro(s, fmv)) return false;
+    if (fmd !== 'all' && modalidadeDe(s) !== fmd) return false;
     if (dat === '__sem' && s.colacaoData) return false;
     if (dat !== 'all' && dat !== '__sem' && s.colacaoData !== dat) return false;
     return true;
@@ -3868,6 +3882,13 @@ async function instalarApp(){ if (!pwaEvt) return; pwaEvt.prompt(); try { await 
 const MOV_DIAS = 14;
 const MOV_LBL = { novo:'Novo na base', virou_formado:'Virou formado', voltou_formando:'Voltou a formando', doc:'Documentação', etapa:'Etapa Digitaliza', aac:'AAC', apt:'Aptidão', cat:'Mudou de grupo', reativado:'Voltou à base', arquivado:'Saiu da base' };
 const MOV_COR = { novo:'#1C3B6E', virou_formado:'#2F7D32', voltou_formando:'#B45309', doc:'#0E7490', etapa:'#0E7490', aac:'#0E7490', apt:'#6D28D9', cat:'#6B7280', reativado:'#1C3B6E', arquivado:'#B91C1C' };
+
+/* Modalidade: as bases não trazem uma coluna própria. Turno VIRTUAL (diretoria digital) = EAD; os demais turnos = Presencial. */
+function modalidadeDe(s){
+  const t = normTxt(s.turno || '');
+  if (!t) return '';
+  return /virtual|ead|digital|distancia/.test(t) ? 'EAD' : 'Presencial';
+}
 
 function movRecente(s){ return s.movTs && (Date.now() - s.movTs) <= MOV_DIAS * 86400000; }
 function movChip(s){
